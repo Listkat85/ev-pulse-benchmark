@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080B0F">
+  <title>EV Pulse Benchmark</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" role="img">
+            <path d="M10 20h25c4 0 7 2 9 6l3 6 7-11" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 32h16l4-6 5 13 5-9 4 2" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 44h24" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="brand-name">EV Pulse</div>
+          <div class="brand-sub">Benchmark</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item active" type="button" data-view="overview"><span>⌂</span> Overblik</button>
+        <button class="nav-item" type="button" data-view="upload"><span>⇧</span> Upload data</button>
+        <button class="nav-item" type="button" data-view="vehicle"><span>EV</span> Min bil</button>
+      </nav>
+
+      <div class="sync-card">
+        <div class="status-dot" id="sideStatusDot"></div>
+        <div>
+          <div class="sync-title" id="sideStatus">Forbinder…</div>
+          <div class="sync-meta" id="sideMeta">Supabase</div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div>
+          <h1>EV Pulse Benchmark</h1>
+          <p>Batterihistorik, dokumentation og sammenligning.</p>
+        </div>
+        <div class="connection-pill" id="connectionPill">Forbinder…</div>
+      </header>
+
+      <section id="setupPanel" class="panel setup-panel hidden">
+        <div>
+          <div class="eyebrow">Første opsætning</div>
+          <h2>Fortæl os hvilken bil dataene tilhører</h2>
+          <p>Der gemmes ingen VIN, nummerplade, navn eller position.</p>
+        </div>
+        <form id="vehicleForm" class="vehicle-form">
+          <label>Mærke<input name="manufacturer" value="Kia" required></label>
+          <label>Model<input name="model" value="EV6" required></label>
+          <label>Variant<input name="variant" value="RWD"></label>
+          <label>Modelår<input name="model_year" type="number" value="2023" min="2018" max="2035"></label>
+          <label>Batteri, kWh<input name="battery_nominal_kwh" type="number" step="0.1" value="77.4"></label>
+          <label>Platform<input name="platform" value="E-GMP" required></label>
+          <button class="primary-btn" type="submit">Gem bilprofil</button>
+        </form>
+        <div id="vehicleFormMessage" class="form-message" aria-live="polite"></div>
+      </section>
+
+      <section id="overviewView" class="view">
+        <div class="hero panel">
+          <div class="hero-car">
+            <div class="hero-badge">E-GMP</div>
+            <div class="car-silhouette" aria-hidden="true">
+              <svg viewBox="0 0 420 160">
+                <path d="M54 104c10-35 28-54 61-64 41-13 126-16 173-4 30 8 49 26 73 64l22 5c13 3 20 13 20 26v7H18v-10c0-11 7-20 18-23z" fill="currentColor" opacity=".14"/>
+                <path d="M86 93c18-34 36-44 74-50 43-7 98-7 136 2 24 6 39 17 59 48" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".9"/>
+                <path d="M31 110h355" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".72"/>
+                <circle cx="106" cy="118" r="25" fill="#080B0F" stroke="currentColor" stroke-width="5"/>
+                <circle cx="316" cy="118" r="25" fill="#080B0F" stroke="currentColor" stroke-width="5"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="hero-copy">
+            <div class="eyebrow" id="vehicleLine">Ingen bilprofil endnu</div>
+            <h2><span id="heroSoh">—</span><span class="hero-unit"> % SoH</span></h2>
+            <div class="evidence-pill">MÅLT · BMS</div>
+            <p id="heroInsight">Upload Battery Evidence CSV for at bygge din tidslinje.</p>
+          </div>
+
+          <div class="percentile">
+            <div class="eyebrow">Sammenligning</div>
+            <div class="percentile-value" id="percentileValue">Afventer flådedata</div>
+            <div class="range-track"><span style="left: 50%"></span></div>
+            <div class="range-labels"><span>Lavere</span><span>Median</span><span>Højere</span></div>
+            <p id="cohortText">Benchmark aktiveres, når der er nok sammenlignelige biler.</p>
+          </div>
+        </div>
+
+        <div class="metrics-grid">
+          <article class="metric-card">
+            <div class="metric-label">SoH</div>
+            <div class="metric-value" id="metricSoh">—</div>
+            <div class="metric-meta" id="metricSohMeta">Ingen målinger</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">Remaining Energy @ 100 %</div>
+            <div class="metric-value" id="metricEnergy">—</div>
+            <div class="metric-meta" id="metricEnergyMeta">Kræver 100 % reference</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">Spændingsspredning</div>
+            <div class="metric-value" id="metricDelta">—</div>
+            <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
+          </article>
+          <article class="metric-card">
+            <div class="metric-label">Batterihistorik</div>
+            <div class="metric-value" id="metricRecords">0</div>
+            <div class="metric-meta" id="metricRecordsMeta">observationer</div>
+          </article>
+        </div>
+
+        <section class="panel timeline-panel">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Batteritidslinje</div>
+              <h3>SoH over kilometer</h3>
+            </div>
+            <div class="legend"><span class="legend-line mint"></span> Din bil</div>
+          </div>
+          <div id="sohChart" class="chart-wrap">
+            <div class="empty-state">Upload Battery Evidence CSV for at vise grafen.</div>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <div class="panel">
+            <div class="section-heading">
+              <div>
+                <div class="eyebrow">Seneste evidens</div>
+                <h3>Battery Evidence</h3>
+              </div>
+            </div>
+            <div id="evidenceList" class="evidence-list">
+              <div class="empty-state">Ingen records endnu.</div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-heading">
+              <div>
+                <div class="eyebrow">Benchmark</div>
+                <h3>Din bil mod flåden</h3>
+              </div>
+            </div>
+            <div class="benchmark-placeholder">
+              <div class="benchmark-icon">↗</div>
+              <strong>Datagrundlaget bygges nu</strong>
+              <p>Når mindst 5 sammenlignelige biler findes, viser vi median, percentiler og placering uden at udstille andre bilers rådata.</p>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="uploadView" class="view hidden">
+        <div class="panel upload-panel">
+          <div class="eyebrow">Manuel sync · MVP</div>
+          <h2>Upload Battery Evidence CSV</h2>
+          <p>Brug CSV-filen fra <strong>EV Pulse → Mere → Batterihistorik</strong>. v0.1 gemmer kun strukturerede Battery Evidence-records.</p>
+
+          <label class="dropzone" id="dropzone">
+            <input id="csvFile" type="file" accept=".csv,text/csv">
+            <div class="drop-icon">⇧</div>
+            <strong>Vælg eller slip CSV-filen her</strong>
+            <span id="fileLabel">Ingen fil valgt</span>
+          </label>
+
+          <div class="upload-actions">
+            <button class="primary-btn" id="uploadButton" type="button" disabled>Upload til EV Pulse Benchmark</button>
+            <button class="secondary-btn" id="previewButton" type="button" disabled>Forhåndsvis</button>
+          </div>
+          <div id="uploadMessage" class="form-message" aria-live="polite"></div>
+
+          <div id="previewBox" class="preview-box hidden">
+            <div class="preview-head"><strong>CSV-kontrol</strong><span id="previewCount"></span></div>
+            <div id="previewContent"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="vehicleView" class="view hidden">
+        <div class="panel">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">Bilprofil</div>
+              <h2>Min bil</h2>
+            </div>
+          </div>
+          <form id="vehicleEditForm" class="vehicle-form"></form>
+          <div id="vehicleEditMessage" class="form-message" aria-live="polite"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="./config.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
