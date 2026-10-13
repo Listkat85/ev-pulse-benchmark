@@ -92,12 +92,12 @@
     <section id="overviewView" class="view">
       <section class="hero panel" id="heroPanel">
         <div class="hero-photo" id="heroPhoto" aria-hidden="true">
-          <div class="hero-tint" id="heroTint"></div>
-          <div class="performance-caliper performance-caliper-a"></div>
-          <div class="performance-caliper performance-caliper-b"></div>
+          <div class="hero-photo-backdrop"></div>
+          <img id="heroImage" class="hero-image"
+               src="./assets/heroes/gt-line/hero_gtline_klm_moonscape.png"
+               alt="" decoding="async" fetchpriority="high">
+          <div class="hero-photo-shading"></div>
         </div>
-
-        <div class="hero-overlay"></div>
 
         <div class="hero-config">
           <div class="vehicle-row">
@@ -134,6 +134,7 @@
         </div>
 
         <div class="hero-version-badge" id="heroVersionBadge">GT-Line</div>
+        <div id="heroAssetStatus" class="hero-image-error hidden" role="status" aria-live="polite"></div>
       </section>
 
       <section class="metrics-grid">

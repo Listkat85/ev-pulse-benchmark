@@ -1,4 +1,5 @@
 (() => {
+  console.info("EV Pulse Benchmark v0.7 · canonical assets");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -6,57 +7,56 @@
   let currentRecords = [];
   let parsedRows = [];
 
+  // One canonical map. Every file lives at the same path in the ZIP and in GitHub.
+  const HERO_ROOT = "./assets/heroes/";
   const EV6_PAINTS = [
-    { code:"KLM", name:"Moonscape", hex:"#8B8B88", tint:"#8B8B88", opacity:.18, blend:"color" },
-    { code:"SWP", name:"Snow White Pearl", hex:"#F3F4F1", tint:"#F4F4EE", opacity:.30, blend:"screen" },
-    { code:"ABP", name:"Aurora Black Pearl", hex:"#0B0D10", tint:"#020304", opacity:.22, blend:"multiply" },
-    { code:"DU3", name:"Yacht Blue", hex:"#1A477F", tint:"#1F4F88", opacity:.42, blend:"color" },
-    { code:"CR5", name:"Runway Red", hex:"#9B2B31", tint:"#A93038", opacity:.46, blend:"color" }
+    {code:"KLM", name:"Moonscape", hex:"#8B8B88", file:"klm_moonscape"},
+    {code:"SWP", name:"Snow White Pearl", hex:"#F3F4F1", file:"swp_snow-white-pearl"},
+    {code:"ABP", name:"Aurora Black Pearl", hex:"#0B0D10", file:"abp_aurora-black-pearl"},
+    {code:"DU3", name:"Yacht Blue", hex:"#1A477F", file:"du3_yacht-blue"},
+    {code:"CR5", name:"Runway Red", hex:"#9B2B31", file:"cr5_runway-red"}
   ];
-
-  const HERO_ASSETS = {
-    "GT-Line": {
-      KLM: "./hero_gtline_klm_moonscape.png",
-      SWP: "./hero_gtline_swp_snow-white-pearl.png",
-      ABP: "./hero_gtline_abp_aurora-black-pearl.png",
-      DU3: "./hero_gtline_du3_yacht-blue.png",
-      CR5: "./hero_gtline_cr5_runway-red.png"
-    },
-    "GT Performance": {
-      KLM: "./hero_gtperformance_klm_moonscape.png",
-      SWP: "./hero_gtperformance_swp_snow-white-pearl.png",
-      ABP: "./hero_gtperformance_abp_aurora-black-pearl.png",
-      DU3: "./hero_gtperformance_du3_yacht-blue.png",
-      CR5: "./hero_gtperformance_cr5_runway-red.png"
-    }
+  const EV6_TRIMS = {
+    "GT-Line": {folder:"gt-line", stem:"hero_gtline_"},
+    "GT Performance": {folder:"gt-performance", stem:"hero_gtperformance_"}
   };
-
-  const HERO_FALLBACK = "./hero_ev6.png";
   let heroLoadToken = 0;
+  let visualSaveQueue = Promise.resolve();
+
+  function heroPath(trim, colorCode) {
+    const model = EV6_TRIMS[trim] || EV6_TRIMS["GT-Line"];
+    const paint = EV6_PAINTS.find(p => p.code === colorCode) || EV6_PAINTS[0];
+    return HERO_ROOT + model.folder + "/" + model.stem + paint.file + ".png";
+  }
 
   function setHeroAsset(trim, colorCode) {
     const token = ++heroLoadToken;
-    const hero = q("heroPhoto");
-    if (!hero) return;
+    const image = q("heroImage");
+    const background = q("heroPhoto");
+    const status = q("heroAssetStatus");
+    if (!image || !background) return;
+    const path = heroPath(trim, colorCode);
+    if (background.dataset.heroAsset === path && image.complete && image.naturalWidth > 0) return;
 
-    const candidate = HERO_ASSETS?.[trim]?.[colorCode] || HERO_FALLBACK;
-    const img = new Image();
-
-    img.onload = () => {
+    image.classList.add("is-loading");
+    const probe = new Image();
+    probe.onload = () => {
       if (token !== heroLoadToken) return;
-      hero.style.setProperty("--hero-image", `url("${candidate}")`);
-      hero.classList.add("has-exact-hero");
-      hero.dataset.heroAsset = candidate;
+      image.src = path;
+      background.dataset.heroAsset = path;
+      background.style.setProperty("--active-hero-url", `url("${path}")`);
+      image.classList.remove("is-loading");
+      status.classList.add("hidden");
+      status.textContent = "";
     };
-
-    img.onerror = () => {
+    probe.onerror = () => {
       if (token !== heroLoadToken) return;
-      hero.style.setProperty("--hero-image", `url("${HERO_FALLBACK}")`);
-      hero.classList.remove("has-exact-hero");
-      hero.dataset.heroAsset = HERO_FALLBACK;
+      image.classList.remove("is-loading");
+      status.textContent = "Hero-billede kunne ikke indlæses. Kontrollér assets/heroes i GitHub.";
+      status.classList.remove("hidden");
+      console.error("EV Pulse: hero asset not found:", path);
     };
-
-    img.src = candidate;
+    probe.src = path;
   }
 
   const q = (id) => document.getElementById(id);
@@ -65,7 +65,7 @@
     const n = Number(String(v).replace(",", "."));
     return Number.isFinite(n) ? n : null;
   };
-  const fmt = (v, digits = 1) => Number.isFinite(Number(v))
+  const fmt = (v, digits = 1) => v !== null && v !== undefined && v !== "" && Number.isFinite(Number(v))
     ? Number(v).toLocaleString("da-DK", { minimumFractionDigits: digits, maximumFractionDigits: digits })
     : "—";
   const dateFmt = (v) => {
@@ -190,20 +190,19 @@
     container.innerHTML = EV6_PAINTS.map(p => `
       <button type="button" class="paint-swatch ${p.code === selected ? "active" : ""}"
         data-paint="${p.code}" style="--swatch:${p.hex}" title="${esc(p.name)} (${p.code})"
-        aria-label="${esc(p.name)}"></button>`).join("");
+        aria-label="${esc(p.name)}" aria-pressed="${p.code === selected}"></button>`).join("");
   }
 
   function applyVehicleVisual() {
-    const trim = currentVehicle?.trim_level || "GT-Line";
+    const trim = EV6_TRIMS[currentVehicle?.trim_level] ? currentVehicle.trim_level : "GT-Line";
     const paint = paintByCode(currentVehicle?.exterior_color_code || "KLM");
-    const root = document.documentElement;
-    root.style.setProperty("--car-tint", paint.tint);
-    root.style.setProperty("--car-tint-opacity", String(paint.opacity));
-    root.style.setProperty("--car-tint-blend", paint.blend);
     q("paintName").textContent = `${paint.name} · ${paint.code}`;
     q("heroVersionBadge").textContent = trim;
-    q("heroPhoto").classList.toggle("performance", trim === "GT Performance");
-    document.querySelectorAll(".trim-option").forEach(btn => btn.classList.toggle("active", btn.dataset.trim === trim));
+    document.querySelectorAll(".trim-option").forEach(btn => {
+      const selected = btn.dataset.trim === trim;
+      btn.classList.toggle("active", selected);
+      btn.setAttribute("aria-pressed", String(selected));
+    });
     renderPaintSwatches();
     setHeroAsset(trim, paint.code);
   }
@@ -255,20 +254,26 @@
 
   async function updateVehicleVisualConfig(patch) {
     if (!currentVehicle) return;
-    const next = { ...currentVehicle, ...patch };
-    currentVehicle = next;
+    const vehicleId = currentVehicle.id;
+    currentVehicle = {...currentVehicle, ...patch};
     renderVehicleState();
 
-    const dbPatch = { ...patch, updated_at: new Date().toISOString() };
-    const { data, error } = await sb.from("vehicles").update(dbPatch).eq("id", currentVehicle.id).select("*").single();
-    if (error) {
-      console.error(error);
-      alert("Kunne ikke gemme bilens visuelle profil. Kør SQL-filen 05_vehicle_visual_config.sql i Supabase først.");
+    const write = visualSaveQueue.catch(() => {}).then(async () => {
+      const {error} = await sb.from("vehicles")
+        .update({...patch, updated_at:new Date().toISOString()})
+        .eq("id", vehicleId);
+      if (error) throw error;
+    });
+    visualSaveQueue = write;
+    try {
+      await write;
+    } catch (err) {
+      console.error("EV Pulse: could not save vehicle configuration:", err);
+      const status = q("heroAssetStatus");
+      status.textContent = "Valget kunne ikke gemmes. Kontrollér forbindelsen til Supabase.";
+      status.classList.remove("hidden");
       await loadVehicle();
-      return;
     }
-    currentVehicle = data;
-    renderVehicleState();
   }
 
   function latestValid(field, records = currentRecords) {
@@ -307,7 +312,7 @@
       .map(r => ({ x:Number(r.odometer_km), y:Number(r.soh_percent), date:r.recorded_at }));
     const byKey = new Map();
     raw.forEach(p => byKey.set(`${p.x}|${p.y}`, p));
-    const pts = [...byKey.values()];
+    const pts = [...byKey.values()].sort((a,b) => a.x - b.x);
     if (!pts.length) { chart.innerHTML = '<div class="empty-state">Ingen SoH-data endnu.</div>'; return; }
 
     const w=1200,h=210,padL=58,padR=28,padT=20,padB=38;
@@ -338,7 +343,7 @@
     const tagClass=t=>t==="LOW_SOC_REFERENCE"?"evidence-tag low":"evidence-tag";
     box.innerHTML=`<table class="evidence-table"><thead><tr><th>Type</th><th>SoH</th><th>SoC</th><th>Energi</th><th>Temperatur</th><th>Kilometer</th><th>Dato</th></tr></thead><tbody>${rows.map(r=>{
       const avg=Number(r.battery_temp_avg_c);const t=Number.isFinite(avg)?`${fmt(avg,0)} °C`:(Number.isFinite(Number(r.battery_temp_min_c))?`${fmt(r.battery_temp_min_c,0)}–${fmt(r.battery_temp_max_c,0)} °C`:"—");
-      return `<tr><td><span class="${tagClass(r.record_type)}">${recordLabel(r.record_type)}</span></td><td class="evidence-soh">${fmt(r.soh_percent,1)} %</td><td>${fmt(r.soc_display_percent,1)} %</td><td>${fmt(r.remaining_energy_kwh,2)} kWh</td><td>${t}</td><td>${r.odometer_km?Math.round(r.odometer_km).toLocaleString("da-DK")+" km":"—"}</td><td>${dateFmt(r.recorded_at)}</td></tr>`}).join("")}</tbody></table>`;
+      return `<tr><td><span class="${tagClass(r.record_type)}">${esc(recordLabel(r.record_type))}</span></td><td class="evidence-soh">${fmt(r.soh_percent,1)} %</td><td>${fmt(r.soc_display_percent,1)} %</td><td>${fmt(r.remaining_energy_kwh,2)} kWh</td><td>${t}</td><td>${r.odometer_km?Math.round(r.odometer_km).toLocaleString("da-DK")+" km":"—"}</td><td>${dateFmt(r.recorded_at)}</td></tr>`}).join("")}</tbody></table>`;
   }
 
   async function createVehicleFromForm(form) {
