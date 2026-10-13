@@ -16,18 +16,18 @@
 
   const HERO_ASSETS = {
     "GT-Line": {
-      KLM: "./assets/heroes/gt-line/hero_gtline_klm_moonscape.png",
-      SWP: "./assets/heroes/gt-line/hero_gtline_swp_snow-white-pearl.png",
-      ABP: "./assets/heroes/gt-line/hero_gtline_abp_aurora-black-pearl.png",
-      DU3: "./assets/heroes/gt-line/hero_gtline_du3_yacht-blue.png",
-      CR5: "./assets/heroes/gt-line/hero_gtline_cr5_runway-red.png"
+      KLM: "./hero_gtline_klm_moonscape.png",
+      SWP: "./hero_gtline_swp_snow-white-pearl.png",
+      ABP: "./hero_gtline_abp_aurora-black-pearl.png",
+      DU3: "./hero_gtline_du3_yacht-blue.png",
+      CR5: "./hero_gtline_cr5_runway-red.png"
     },
     "GT Performance": {
-      KLM: "./assets/heroes/gt-performance/hero_gtperformance_klm_moonscape.png",
-      SWP: "./assets/heroes/gt-performance/hero_gtperformance_swp_snow-white-pearl.png",
-      ABP: "./assets/heroes/gt-performance/hero_gtperformance_abp_aurora-black-pearl.png",
-      DU3: "./assets/heroes/gt-performance/hero_gtperformance_du3_yacht-blue.png",
-      CR5: "./assets/heroes/gt-performance/hero_gtperformance_cr5_runway-red.png"
+      KLM: "./hero_gtperformance_klm_moonscape.png",
+      SWP: "./hero_gtperformance_swp_snow-white-pearl.png",
+      ABP: "./hero_gtperformance_abp_aurora-black-pearl.png",
+      DU3: "./hero_gtperformance_du3_yacht-blue.png",
+      CR5: "./hero_gtperformance_cr5_runway-red.png"
     }
   };
 
