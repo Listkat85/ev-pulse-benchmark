@@ -14,6 +14,51 @@
     { code:"CR5", name:"Runway Red", hex:"#9B2B31", tint:"#A93038", opacity:.46, blend:"color" }
   ];
 
+  const HERO_ASSETS = {
+    "GT-Line": {
+      KLM: "./assets/heroes/gt-line/hero_gtline_klm_moonscape.png",
+      SWP: "./assets/heroes/gt-line/hero_gtline_swp_snow-white-pearl.png",
+      ABP: "./assets/heroes/gt-line/hero_gtline_abp_aurora-black-pearl.png",
+      DU3: "./assets/heroes/gt-line/hero_gtline_du3_yacht-blue.png",
+      CR5: "./assets/heroes/gt-line/hero_gtline_cr5_runway-red.png"
+    },
+    "GT Performance": {
+      KLM: "./assets/heroes/gt-performance/hero_gtperformance_klm_moonscape.png",
+      SWP: "./assets/heroes/gt-performance/hero_gtperformance_swp_snow-white-pearl.png",
+      ABP: "./assets/heroes/gt-performance/hero_gtperformance_abp_aurora-black-pearl.png",
+      DU3: "./assets/heroes/gt-performance/hero_gtperformance_du3_yacht-blue.png",
+      CR5: "./assets/heroes/gt-performance/hero_gtperformance_cr5_runway-red.png"
+    }
+  };
+
+  const HERO_FALLBACK = "./hero_ev6.png";
+  let heroLoadToken = 0;
+
+  function setHeroAsset(trim, colorCode) {
+    const token = ++heroLoadToken;
+    const hero = q("heroPhoto");
+    if (!hero) return;
+
+    const candidate = HERO_ASSETS?.[trim]?.[colorCode] || HERO_FALLBACK;
+    const img = new Image();
+
+    img.onload = () => {
+      if (token !== heroLoadToken) return;
+      hero.style.setProperty("--hero-image", `url("${candidate}")`);
+      hero.classList.add("has-exact-hero");
+      hero.dataset.heroAsset = candidate;
+    };
+
+    img.onerror = () => {
+      if (token !== heroLoadToken) return;
+      hero.style.setProperty("--hero-image", `url("${HERO_FALLBACK}")`);
+      hero.classList.remove("has-exact-hero");
+      hero.dataset.heroAsset = HERO_FALLBACK;
+    };
+
+    img.src = candidate;
+  }
+
   const q = (id) => document.getElementById(id);
   const num = (v) => {
     if (v === null || v === undefined || v === "") return null;
@@ -160,6 +205,7 @@
     q("heroPhoto").classList.toggle("performance", trim === "GT Performance");
     document.querySelectorAll(".trim-option").forEach(btn => btn.classList.toggle("active", btn.dataset.trim === trim));
     renderPaintSwatches();
+    setHeroAsset(trim, paint.code);
   }
 
   function vehicleEditMarkup() {
