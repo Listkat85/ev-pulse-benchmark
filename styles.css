@@ -96,19 +96,12 @@ svg { display:block; }
 .vehicle-chip { display:inline-flex; align-items:center; gap:7px; padding:7px 10px; border:1px solid rgba(125,183,217,.23); border-radius:999px; background:rgba(6,14,20,.68); font-size:10px; font-weight:760; color:#DCE8EE; }
 .vehicle-chip svg { width:14px; height:14px; fill:none; stroke:#60E2BA; stroke-width:2; stroke-linecap:round; }
 .vehicle-meta { font-size:11px; color:#B3C1CB; }
-.config-block { margin-top:20px; }
-.config-label-row { display:flex; justify-content:space-between; gap:10px; align-items:center; }
-.config-label { font-size:10px; color:#AAB8C2; font-weight:760; }
 .paint-name { font-size:9px; color:#9DB2BC; }
-.trim-switch { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:8px; }
-.trim-option { height:38px; border-radius:10px; border:1px solid rgba(125,183,217,.18); background:rgba(8,17,23,.78); color:#9FAFBB; font-size:10px; font-weight:760; transition:background 150ms ease; }
-.trim-option.active { color:#E9F8F3; border-color:#58E3BA; background:linear-gradient(90deg,rgba(29,137,108,.33),rgba(25,75,69,.26)); box-shadow:0 0 0 1px rgba(88,227,186,.08) inset; }
-.trim-option:focus-visible,.paint-swatch:focus-visible { outline:2px solid var(--energy); outline-offset:3px; }
+.paint-swatch:focus-visible { outline:2px solid var(--energy); outline-offset:3px; }
 .paint-swatches { display:flex; gap:11px; flex-wrap:wrap; margin-top:14px; }
 .paint-swatch { width:30px; height:30px; border-radius:50%; border:1px solid rgba(255,255,255,.35); background:var(--swatch); box-shadow:inset 0 1px 2px rgba(255,255,255,.25),0 4px 10px rgba(0,0,0,.25); position:relative; padding:0; }
 .paint-swatch::after { content:""; position:absolute; inset:-4px; border:2px solid transparent; border-radius:50%; }
 .paint-swatch.active::after { border-color:#57E2B8; box-shadow:0 0 12px rgba(87,226,184,.28); }
-.paint-note { font-size:9px; color:#8294A0; margin-top:12px; }
 .hero-health { grid-column:2; align-self:center; padding:0 18px 5px 6px; }
 .hero-label { font-size:11px; color:#D2DAE0; font-weight:700; }
 .info-dot { display:inline-grid; place-items:center; width:14px; height:14px; border:1px solid #718595; border-radius:50%; font-size:8px; color:#9DAEBA; margin-left:3px; }
@@ -235,3 +228,43 @@ svg { display:block; }
   .metric-meta { white-space:normal; }
   .paint-name { white-space:nowrap; }
 }
+
+/* EV Pulse Benchmark v0.8 — one home for vehicle configuration */
+.hero { grid-template-columns: minmax(320px, 1.08fr) minmax(260px,.65fr) minmax(0,1.15fr); }
+.hero-config { justify-content:space-between; max-width:490px; }
+.hero-edit-link {
+  display:inline-flex; align-items:center; align-self:flex-start; gap:8px; padding:9px 12px;
+  color:#A7D9C4; background:rgba(4,16,19,.62); border:1px solid rgba(167,217,196,.25);
+  border-radius:10px; font-size:11px; transition:background 150ms ease;
+}
+.hero-edit-link:hover {background:rgba(31,89,74,.42)}
+.hero-edit-link svg {width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.hero-image-error {bottom:4px; max-width:560px; right:50%; left:auto; text-align:right; color:#D4E3E9; font-size:10px; background:rgba(5,13,18,.52); padding:5px 9px; border-radius:8px}
+.vehicle-lead {margin:9px 0 0;font-size:12px;line-height:1.5;color:var(--text-2)}
+.vehicle-panel {max-width:none}
+.vehicle-config-grid {display:grid;grid-template-columns:minmax(500px,1.12fr) minmax(300px,.88fr);gap:24px;align-items:start;margin-top:22px}
+.vehicle-form {display:flex;flex-direction:column;gap:15px;margin-top:0}
+.vehicle-form-section {padding:18px;border:1px solid var(--border-soft);border-radius:16px;background:rgba(4,12,18,.45)}
+.vehicle-form-section h3 {font-size:16px;font-weight:730;letter-spacing:-.015em;margin:7px 0 15px}
+.vehicle-fields {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.trim-options {display:grid;grid-template-columns:repeat(3, minmax(0,1fr));gap:10px}
+.trim-card {position:relative;cursor:pointer}
+.trim-card input {position:absolute;width:1px;height:1px;opacity:0}
+.trim-card span {display:flex;align-items:center;justify-content:center;min-height:52px;text-align:center;padding:10px;border:1px solid var(--border);border-radius:12px;background:#0C171D;color:var(--text-2);font-size:11px;font-weight:760;transition:all 160ms ease}
+.trim-card input:checked+span {background:rgba(49,144,117,.22);color:#F1FFF9;border-color:#59E1B7;box-shadow:0 0 0 1px rgba(89,225,183,.09) inset}
+.trim-card input:focus-visible+span {outline:2px solid var(--energy);outline-offset:3px}
+.vehicle-color-row {display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.vehicle-color-row .paint-swatches {margin:10px 0 0}
+.vehicle-color-row .paint-name {font-size:12px;color:#B6D5C8}
+.vehicle-settings-hint {color:var(--muted);line-height:1.5;font-size:11px;margin:12px 0 0}
+.vehicle-save-row {display:flex;gap:16px;align-items:center;flex-wrap:wrap;padding:5px 0 4px}
+.vehicle-save-row span {font-size:11px;color:var(--muted)}
+.vehicle-preview-panel {position:sticky;top:20px;min-width:0;padding:14px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(145deg,rgba(17,36,46,.85),rgba(8,16,22,.93));overflow:hidden}
+.vehicle-preview-head {display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.vehicle-preview-head>span {font-size:9px;letter-spacing:.11em;color:var(--muted);font-weight:750}
+.vehicle-preview-head>strong {font-size:12px;color:#A7D9C4;text-align:right}
+.vehicle-preview-panel img {display:block;width:100%;height:230px;object-fit:cover;object-position:65% center;border-radius:12px}
+.vehicle-preview-note {margin:11px 0 0;color:#9EABB5;line-height:1.55;font-size:11px}
+@media(max-width:1250px){.vehicle-config-grid {grid-template-columns:1fr}.vehicle-preview-panel{position:static;max-width:750px}.hero{grid-template-columns:minmax(310px,1fr) minmax(230px,.8fr)}}
+@media(max-width:900px){.hero{grid-template-columns:1fr}.hero-config{max-width:100%}.hero-health{grid-column:1}.vehicle-config-grid{display:block}.vehicle-preview-panel{margin-top:18px}}
+@media(max-width:600px){.vehicle-panel{padding:17px}.vehicle-fields{grid-template-columns:1fr}.trim-options{grid-template-columns:1fr}.vehicle-color-row{justify-content:flex-start}.vehicle-preview-panel img{height:180px}}

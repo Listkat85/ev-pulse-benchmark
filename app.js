@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.7 · canonical assets");
+  console.info("EV Pulse Benchmark v0.8 · car identity in Min bil");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -17,11 +17,12 @@
     {code:"CR5", name:"Runway Red", hex:"#9B2B31", file:"cr5_runway-red"}
   ];
   const EV6_TRIMS = {
-    "GT-Line": {folder:"gt-line", stem:"hero_gtline_"},
-    "GT Performance": {folder:"gt-performance", stem:"hero_gtperformance_"}
+    "Standard": {folder:"standard", stem:"hero_standard_", label:"EV6 Standard"},
+    "GT-Line": {folder:"gt-line", stem:"hero_gtline_", label:"GT-Line"},
+    "GT Performance": {folder:"gt-performance", stem:"hero_gtperformance_", label:"GT (Performance)"}
   };
   let heroLoadToken = 0;
-  let visualSaveQueue = Promise.resolve();
+
 
   function heroPath(trim, colorCode) {
     const model = EV6_TRIMS[trim] || EV6_TRIMS["GT-Line"];
@@ -35,26 +36,38 @@
     const background = q("heroPhoto");
     const status = q("heroAssetStatus");
     if (!image || !background) return;
-    const path = heroPath(trim, colorCode);
-    if (background.dataset.heroAsset === path && image.complete && image.naturalWidth > 0) return;
 
-    image.classList.add("is-loading");
+    const path = heroPath(trim, colorCode);
+    const fallback = heroPath("GT-Line", colorCode);
     const probe = new Image();
-    probe.onload = () => {
+    image.classList.add("is-loading");
+
+    const display = (chosen, isReference) => {
       if (token !== heroLoadToken) return;
-      image.src = path;
-      background.dataset.heroAsset = path;
-      background.style.setProperty("--active-hero-url", `url("${path}")`);
+      image.src = chosen;
+      background.dataset.heroAsset = chosen;
+      background.style.setProperty("--active-hero-url", `url("${chosen}")`);
       image.classList.remove("is-loading");
-      status.classList.add("hidden");
-      status.textContent = "";
+      if (isReference) {
+        status.textContent = "Illustrationsfoto: GT-Line. Egne Standard-billeder er endnu ikke tilføjet.";
+        status.classList.remove("hidden");
+      } else {
+        status.classList.add("hidden");
+        status.textContent = "";
+      }
     };
+    probe.onload = () => display(path, false);
     probe.onerror = () => {
       if (token !== heroLoadToken) return;
-      image.classList.remove("is-loading");
-      status.textContent = "Hero-billede kunne ikke indlæses. Kontrollér assets/heroes i GitHub.";
-      status.classList.remove("hidden");
-      console.error("EV Pulse: hero asset not found:", path);
+      if (trim === "Standard") {
+        // Standard selection works now, without claiming an unavailable Standard photo is exact.
+        display(fallback, true);
+      } else {
+        image.classList.remove("is-loading");
+        status.textContent = "Hero-foto mangler i assets/heroes. Kontrollér filerne i GitHub.";
+        status.classList.remove("hidden");
+        console.error("EV Pulse: missing hero:", path);
+      }
     };
     probe.src = path;
   }
@@ -179,56 +192,105 @@
     renderDashboard();
   }
 
+  function displayTrim(trim) {
+    return EV6_TRIMS[trim]?.label || "GT-Line";
+  }
+
   function paintByCode(code) {
     return EV6_PAINTS.find(p => p.code === code) || EV6_PAINTS[0];
   }
 
-  function renderPaintSwatches() {
-    const container = q("paintSwatches");
-    if (!container) return;
-    const selected = currentVehicle?.exterior_color_code || "KLM";
+  function trimFromForm(form) {
+    const trim = form?.elements?.namedItem("trim_level")?.value;
+    return EV6_TRIMS[trim] ? trim : "GT-Line";
+  }
+
+  function colorFromForm(form) {
+    return paintByCode(form?.elements?.namedItem("exterior_color_code")?.value || "KLM");
+  }
+
+  function renderPaintSwatches(form) {
+    const container = q("vehiclePaintSwatches");
+    if (!container || !form) return;
+    const selected = colorFromForm(form).code;
     container.innerHTML = EV6_PAINTS.map(p => `
       <button type="button" class="paint-swatch ${p.code === selected ? "active" : ""}"
-        data-paint="${p.code}" style="--swatch:${p.hex}" title="${esc(p.name)} (${p.code})"
-        aria-label="${esc(p.name)}" aria-pressed="${p.code === selected}"></button>`).join("");
+        data-paint="${p.code}" style="--swatch:${p.hex}"
+        title="${esc(p.name)} (${p.code})" aria-label="${esc(p.name)}" aria-pressed="${p.code === selected}"></button>`).join("");
+    q("vehiclePaintName").textContent = `${paintByCode(selected).name} · ${selected}`;
+  }
+
+  function refreshVehiclePreview() {
+    const form = q("vehicleEditForm");
+    if (!currentVehicle || !form) return;
+    const trim = trimFromForm(form);
+    const paint = colorFromForm(form);
+    const preview = q("vehiclePreviewImage");
+    const label = q("vehiclePreviewLabel");
+    const note = q("vehiclePreviewNote");
+    label.textContent = `${displayTrim(trim)} · ${paint.name}`;
+    const expected = heroPath(trim, paint.code);
+    const fallback = heroPath("GT-Line", paint.code);
+    const probe = new Image();
+    // Ignore delayed responses to rapidly changing selections.
+    const token = expected + ":" + Date.now() + ":" + Math.random();
+    preview.dataset.token = token;
+    probe.onload = () => {
+      if (preview.dataset.token !== token) return;
+      preview.src = expected;
+      note.textContent = "Visuel modelreference · Kia-lakfarver kan afvige fra skærmvisningen.";
+    };
+    probe.onerror = () => {
+      if (preview.dataset.token !== token) return;
+      preview.src = fallback;
+      note.textContent = trim === "Standard"
+        ? "Referencemotiv: GT-Line. Standard er valgt korrekt, men har endnu ikke egne hero-billeder."
+        : "Billedreference ikke fundet. Kontrollér assets/heroes i GitHub.";
+    };
+    probe.src = expected;
   }
 
   function applyVehicleVisual() {
     const trim = EV6_TRIMS[currentVehicle?.trim_level] ? currentVehicle.trim_level : "GT-Line";
     const paint = paintByCode(currentVehicle?.exterior_color_code || "KLM");
-    q("paintName").textContent = `${paint.name} · ${paint.code}`;
-    q("heroVersionBadge").textContent = trim;
-    document.querySelectorAll(".trim-option").forEach(btn => {
-      const selected = btn.dataset.trim === trim;
-      btn.classList.toggle("active", selected);
-      btn.setAttribute("aria-pressed", String(selected));
-    });
-    renderPaintSwatches();
+    q("heroVersionBadge").textContent = displayTrim(trim);
     setHeroAsset(trim, paint.code);
+    refreshVehiclePreview();
   }
 
   function vehicleEditMarkup() {
     if (!currentVehicle) return '<div class="empty-state">Opret først bilprofilen.</div>';
-    const trim = currentVehicle.trim_level || "GT-Line";
+    const trim = EV6_TRIMS[currentVehicle.trim_level] ? currentVehicle.trim_level : "GT-Line";
     const color = currentVehicle.exterior_color_code || "KLM";
-    const paintOptions = EV6_PAINTS.map(p => `<option value="${p.code}" ${p.code===color?"selected":""}>${esc(p.name)} (${p.code})</option>`).join("");
+    const variant = currentVehicle.variant || "RWD";
+    const paint = paintByCode(color);
     return `
-      <label>Mærke<input name="manufacturer" value="${esc(currentVehicle.manufacturer || "")}"></label>
-      <label>Model<input name="model" value="${esc(currentVehicle.model || "")}"></label>
-      <label>Drivlinje<input name="variant" value="${esc(currentVehicle.variant || "")}"></label>
-      <label>Modelår<input name="model_year" type="number" value="${esc(currentVehicle.model_year || "")}"></label>
-      <label>Batteri, kWh<input name="battery_nominal_kwh" type="number" step="0.1" value="${esc(currentVehicle.battery_nominal_kwh || "")}"></label>
-      <label>Platform<input name="platform" value="${esc(currentVehicle.platform || "E-GMP")}"></label>
-      <label>Version
-        <select name="trim_level">
-          <option value="GT-Line" ${trim==="GT-Line"?"selected":""}>GT-Line</option>
-          <option value="GT Performance" ${trim==="GT Performance"?"selected":""}>GT Performance</option>
-        </select>
-      </label>
-      <label>Kia-farve
-        <select name="exterior_color_code">${paintOptions}</select>
-      </label>
-      <button class="primary-btn" type="submit">Gem ændringer</button>`;
+      <div class="vehicle-form-section"><div class="eyebrow">BILIDENTITET</div><h3>Model og drivlinje</h3>
+      <div class="vehicle-fields">
+        <label>Mærke<input name="manufacturer" value="${esc(currentVehicle.manufacturer || "")}" required></label>
+        <label>Model<input name="model" value="${esc(currentVehicle.model || "")}" required></label>
+        <label>Modelår<input name="model_year" type="number" min="2018" max="2035" value="${esc(currentVehicle.model_year || "")}"></label>
+        <label>Drivlinje<select name="variant">
+          <option value="RWD" ${variant === "RWD" ? "selected" : ""}>RWD · Baghjulstræk</option>
+          <option value="AWD" ${variant === "AWD" ? "selected" : ""}>AWD · Firehjulstræk</option>
+        </select></label>
+        <label>Batteri, kWh<input name="battery_nominal_kwh" type="number" step="0.1" min="1" value="${esc(currentVehicle.battery_nominal_kwh || "")}"></label>
+        <label>Platform<input name="platform" value="${esc(currentVehicle.platform || "E-GMP")}" required></label>
+      </div></div>
+      <div class="vehicle-form-section"><div class="eyebrow">KIA EV6</div><h3>Udstyrsvariant</h3>
+        <div class="trim-options" role="group" aria-label="Vælg udstyrsvariant">
+          ${Object.entries(EV6_TRIMS).map(([key,data]) => `<label class="trim-card">
+             <input type="radio" name="trim_level" value="${key}" ${key===trim?"checked":""}>
+             <span>${esc(data.label)}</span></label>`).join("")}
+        </div>
+        <p class="vehicle-settings-hint">Drivlinje og udstyrsvariant er forskellige. GT (Performance) har AWD.</p>
+      </div>
+      <div class="vehicle-form-section"><div class="eyebrow">KARROSSERI</div><h3>Original Kia-farve</h3>
+        <input type="hidden" name="exterior_color_code" value="${esc(paint.code)}">
+        <div class="vehicle-color-row"><div id="vehiclePaintSwatches" class="paint-swatches"></div><span id="vehiclePaintName" class="paint-name">${esc(paint.name)}</span></div>
+        <p class="vehicle-settings-hint">Viste lakfarver er skærmtilnærmelser. Tilgængelighed afhænger af årgang, marked og udgave.</p>
+      </div>
+      <div class="vehicle-save-row"><button class="primary-btn" type="submit">Gem bilprofil</button><span>Farve og variant gemmes på din bil i Supabase.</span></div>`;
   }
 
   function renderVehicleState() {
@@ -243,37 +305,14 @@
     }
     setup.classList.add("hidden");
     const vehicleName = [currentVehicle.manufacturer, currentVehicle.model].filter(Boolean).join(" ");
-    const detailLine = [currentVehicle.model_year, currentVehicle.variant, currentVehicle.trim_level || "GT-Line"].filter(Boolean).join(" · ") +
+    const detailLine = [currentVehicle.model_year, currentVehicle.variant, displayTrim(currentVehicle.trim_level || "GT-Line")].filter(Boolean).join(" · ") +
       (currentVehicle.battery_nominal_kwh ? ` · ${String(currentVehicle.battery_nominal_kwh).replace(".", ",")} kWh` : "");
     q("vehicleChip").textContent = vehicleName || "EV";
     q("vehicleLine").textContent = detailLine || vehicleName || "Bilprofil";
     q("sideVehicle").textContent = vehicleName || "EV Pulse Cloud";
     q("vehicleEditForm").innerHTML = vehicleEditMarkup();
+    renderPaintSwatches(q("vehicleEditForm"));
     applyVehicleVisual();
-  }
-
-  async function updateVehicleVisualConfig(patch) {
-    if (!currentVehicle) return;
-    const vehicleId = currentVehicle.id;
-    currentVehicle = {...currentVehicle, ...patch};
-    renderVehicleState();
-
-    const write = visualSaveQueue.catch(() => {}).then(async () => {
-      const {error} = await sb.from("vehicles")
-        .update({...patch, updated_at:new Date().toISOString()})
-        .eq("id", vehicleId);
-      if (error) throw error;
-    });
-    visualSaveQueue = write;
-    try {
-      await write;
-    } catch (err) {
-      console.error("EV Pulse: could not save vehicle configuration:", err);
-      const status = q("heroAssetStatus");
-      status.textContent = "Valget kunne ikke gemmes. Kontrollér forbindelsen til Supabase.";
-      status.classList.remove("hidden");
-      await loadVehicle();
-    }
   }
 
   function latestValid(field, records = currentRecords) {
@@ -354,10 +393,10 @@
       platform:String(fd.get("platform")||"E-GMP").trim(),
       manufacturer:String(fd.get("manufacturer")||"").trim(),
       model:String(fd.get("model")||"").trim(),
-      variant:String(fd.get("variant")||"").trim()||null,
+      variant:String(fd.get("trim_level")) === "GT Performance" ? "AWD" : String(fd.get("variant")||"RWD").trim(),
       model_year:num(fd.get("model_year")),
       battery_nominal_kwh:num(fd.get("battery_nominal_kwh")),
-      trim_level:"GT-Line",
+      trim_level:EV6_TRIMS[String(fd.get("trim_level"))] ? String(fd.get("trim_level")) : "Standard",
       exterior_color_code:defaultPaint.code,
       exterior_color_name:defaultPaint.name
     };
@@ -370,14 +409,19 @@
     const fd=new FormData(form);
     const colorCode=String(fd.get("exterior_color_code")||"KLM");
     const paint=paintByCode(colorCode);
+    const trim = String(fd.get("trim_level")||"GT-Line");
+    const drive = String(fd.get("variant")||"RWD");
+    if (trim === "GT Performance" && drive !== "AWD") {
+      throw new Error("EV6 GT (Performance) har AWD. Vælg AWD som drivlinje.");
+    }
     const payload={
       platform:String(fd.get("platform")||"").trim(),
       manufacturer:String(fd.get("manufacturer")||"").trim(),
       model:String(fd.get("model")||"").trim(),
-      variant:String(fd.get("variant")||"").trim()||null,
+      variant:drive,
       model_year:num(fd.get("model_year")),
       battery_nominal_kwh:num(fd.get("battery_nominal_kwh")),
-      trim_level:String(fd.get("trim_level")||"GT-Line"),
+      trim_level:EV6_TRIMS[trim] ? trim : "GT-Line",
       exterior_color_code:paint.code,
       exterior_color_name:paint.name,
       updated_at:new Date().toISOString()
@@ -432,15 +476,23 @@
       catch(err){setMessage(q("vehicleEditMessage"),err.message||String(err),"error")}
     });
 
-    q("trimSwitch").addEventListener("click",async e=>{
-      const btn=e.target.closest(".trim-option");if(!btn||!currentVehicle)return;
-      await updateVehicleVisualConfig({trim_level:btn.dataset.trim});
+    q("editVehicleFromHero").addEventListener("click", () => switchView("vehicle"));
+
+    q("vehicleEditForm").addEventListener("click", e => {
+      const btn = e.target.closest(".paint-swatch");
+      if (!btn) return;
+      const form = q("vehicleEditForm");
+      form.elements.namedItem("exterior_color_code").value = btn.dataset.paint;
+      renderPaintSwatches(form);
+      refreshVehiclePreview();
     });
 
-    q("paintSwatches").addEventListener("click",async e=>{
-      const btn=e.target.closest(".paint-swatch");if(!btn||!currentVehicle)return;
-      const paint=paintByCode(btn.dataset.paint);
-      await updateVehicleVisualConfig({exterior_color_code:paint.code,exterior_color_name:paint.name});
+    q("vehicleEditForm").addEventListener("change", e => {
+      if (e.target.name === "trim_level") {
+        const form = q("vehicleEditForm");
+        if (e.target.value === "GT Performance") form.elements.namedItem("variant").value = "AWD";
+        refreshVehiclePreview();
+      }
     });
 
     const fileInput=q("csvFile");

@@ -80,7 +80,12 @@
       <form id="vehicleForm" class="vehicle-form">
         <label>Mærke<input name="manufacturer" value="Kia" required></label>
         <label>Model<input name="model" value="EV6" required></label>
-        <label>Variant<input name="variant" value="RWD"></label>
+        <label>Drivlinje
+          <select name="variant"><option value="RWD">RWD</option><option value="AWD">AWD</option></select>
+        </label>
+        <label>Udstyrsvariant
+          <select name="trim_level"><option value="Standard">EV6 Standard</option><option value="GT-Line">GT-Line</option><option value="GT Performance">GT (Performance)</option></select>
+        </label>
         <label>Modelår<input name="model_year" type="number" value="2023" min="2018" max="2035"></label>
         <label>Batteri, kWh<input name="battery_nominal_kwh" type="number" step="0.1" value="77.4"></label>
         <label>Platform<input name="platform" value="E-GMP" required></label>
@@ -107,23 +112,10 @@
             </div>
             <div class="vehicle-meta" id="vehicleLine">Ingen bilprofil endnu</div>
           </div>
-
-          <div class="config-block">
-            <div class="config-label">Version</div>
-            <div class="trim-switch" id="trimSwitch" role="group" aria-label="Vælg EV6-version">
-              <button type="button" class="trim-option" data-trim="GT-Line">GT-Line</button>
-              <button type="button" class="trim-option" data-trim="GT Performance">GT Performance</button>
-            </div>
-          </div>
-
-          <div class="config-block">
-            <div class="config-label-row">
-              <div class="config-label">Kia-farve</div>
-              <div class="paint-name" id="paintName">Moonscape · KLM</div>
-            </div>
-            <div class="paint-swatches" id="paintSwatches" aria-label="Vælg eksteriørfarve"></div>
-            <div class="paint-note">Skærmfarver er visuelle tilnærmelser til Kia-lak.</div>
-          </div>
+          <button type="button" id="editVehicleFromHero" class="hero-edit-link">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M4 16.5V20h3.5L19 8.5 15.5 5 4 16.5z"/></svg>
+            Rediger bil under Min bil
+          </button>
         </div>
 
         <div class="hero-health">
@@ -277,11 +269,19 @@
       <section class="panel vehicle-panel">
         <div class="section-heading">
           <div>
-            <div class="eyebrow">BILPROFIL</div>
+            <div class="eyebrow">DIN EV PULSE-PROFIL</div>
             <h2>Min bil</h2>
+            <p class="vehicle-lead">Vælg bilens rigtige udgave og fabriksfarve. Ændringer vises på forsiden, når du gemmer.</p>
           </div>
         </div>
-        <form id="vehicleEditForm" class="vehicle-form"></form>
+        <div class="vehicle-config-grid">
+          <form id="vehicleEditForm" class="vehicle-form"></form>
+          <div class="vehicle-preview-panel" id="vehiclePreviewPanel">
+            <div class="vehicle-preview-head"><span>BILENS UDSEENDE</span><strong id="vehiclePreviewLabel">Kia EV6</strong></div>
+            <img id="vehiclePreviewImage" src="./assets/heroes/gt-line/hero_gtline_klm_moonscape.png" alt="Visuel reference til valgt EV6-variant"/>
+            <p id="vehiclePreviewNote" class="vehicle-preview-note">Vælg version og farve for at se bilens visuelle profil.</p>
+          </div>
+        </div>
         <div id="vehicleEditMessage" class="form-message" aria-live="polite"></div>
       </section>
     </section>
