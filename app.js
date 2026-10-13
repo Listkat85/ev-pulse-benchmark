@@ -140,14 +140,17 @@
     if (!currentVehicle) {
       setup.classList.remove("hidden");
       q("vehicleLine").textContent = "Ingen bilprofil endnu";
+      q("vehicleChip").textContent = "EV Pulse";
       q("vehicleEditForm").innerHTML = '<div class="empty-state">Opret først bilprofilen øverst.</div>';
       return;
     }
     setup.classList.add("hidden");
-    q("vehicleLine").textContent =
-      [currentVehicle.manufacturer, currentVehicle.model, currentVehicle.model_year, currentVehicle.variant]
-        .filter(Boolean).join(" · ") +
+    const vehicleName = [currentVehicle.manufacturer, currentVehicle.model].filter(Boolean).join(" ");
+    const detailLine = [currentVehicle.model_year, currentVehicle.variant].filter(Boolean).join(" · ") +
       (currentVehicle.battery_nominal_kwh ? ` · ${String(currentVehicle.battery_nominal_kwh).replace(".", ",")} kWh` : "");
+    q("vehicleChip").textContent = vehicleName || "EV";
+    q("vehicleLine").textContent = detailLine || vehicleName || "Bilprofil";
+    q("sideVehicle").textContent = vehicleName || "EV Pulse Cloud";
 
     const fields = [
       ["manufacturer","Mærke", currentVehicle.manufacturer || ""],
@@ -195,8 +198,12 @@
     q("metricRecordsMeta").textContent = `${full.length} fulde referencer`;
 
     q("heroInsight").textContent = records.length
-      ? `${records.length} Battery Evidence-records · senest ${dateFmt(records.at(-1)?.recorded_at)}`
-      : "Upload Battery Evidence CSV for at bygge din tidslinje.";
+      ? `${records.length} batteriregistreringer · senest ${dateFmt(records.at(-1)?.recorded_at)}`
+      : "Upload batterihistorik for at bygge tidslinjen.";
+
+    if (records.length) {
+      q("sideMeta").textContent = `Seneste data\n${dateFmt(records.at(-1)?.recorded_at)}`;
+    }
 
     renderSohChart();
     renderEvidenceList();
@@ -216,7 +223,7 @@
       return;
     }
 
-    const w = 1000, h = 250, padL = 62, padR = 24, padT = 24, padB = 42;
+    const w = 1200, h = 210, padL = 58, padR = 28, padT = 20, padB = 38;
     let minX = Math.min(...pts.map(p=>p.x)), maxX = Math.max(...pts.map(p=>p.x));
     let minY = Math.min(...pts.map(p=>p.y)), maxY = Math.max(...pts.map(p=>p.y));
     if (maxX === minX) { minX -= 1000; maxX += 1000; }
@@ -243,9 +250,18 @@
     }
     const circles = pts.map(p=>`<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="5" fill="#A7D9C4" stroke="#111720" stroke-width="3"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString("da-DK")} km · ${dateFmt(p.date)}</title></circle>`).join("");
 
+    const area = `${line} L ${sx(pts.at(-1).x).toFixed(1)} ${h-padB} L ${sx(pts[0].x).toFixed(1)} ${h-padB} Z`;
     chart.innerHTML = `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="SoH over kilometer">
+      <defs>
+        <linearGradient id="sohFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#62E2BA" stop-opacity=".17"/>
+          <stop offset="100%" stop-color="#62E2BA" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="softGlow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+      </defs>
       ${grids}${labels}
-      <path d="${line}" fill="none" stroke="#A7D9C4" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="${area}" fill="url(#sohFill)"/>
+      <path d="${line}" fill="none" stroke="#62E2BA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" filter="url(#softGlow)"/>
       ${circles}
     </svg>`;
   }
@@ -266,12 +282,27 @@
     const box = q("evidenceList");
     const rows = [...currentRecords].reverse().slice(0, 8);
     if (!rows.length) { box.innerHTML = '<div class="empty-state">Ingen records endnu.</div>'; return; }
-    box.innerHTML = rows.map(r => `
-      <div class="evidence-item">
-        <div class="evidence-type">${recordLabel(r.record_type)}</div>
-        <div class="evidence-main"><strong>${fmt(r.soh_percent,1)} % SoH</strong> · ${fmt(r.soc_display_percent,1)} % SoC · ${fmt(r.remaining_energy_kwh,2)} kWh</div>
-        <div class="evidence-date">${dateFmt(r.recorded_at)}<br>${r.odometer_km ? Math.round(r.odometer_km).toLocaleString("da-DK")+" km" : ""}</div>
-      </div>`).join("");
+
+    const tagClass = (type) => type === "LOW_SOC_REFERENCE" ? "evidence-tag low" : "evidence-tag";
+    box.innerHTML = `<table class="evidence-table">
+      <thead><tr>
+        <th>Type</th><th>SoH</th><th>SoC</th><th>Energi</th><th>Temperatur</th><th>Kilometer</th><th>Dato</th>
+      </tr></thead>
+      <tbody>${rows.map(r => {
+        const avgT = Number(r.battery_temp_avg_c);
+        const t = Number.isFinite(avgT) ? `${fmt(avgT,0)} °C` :
+          (Number.isFinite(Number(r.battery_temp_min_c)) ? `${fmt(r.battery_temp_min_c,0)}–${fmt(r.battery_temp_max_c,0)} °C` : "—");
+        return `<tr>
+          <td><span class="${tagClass(r.record_type)}">${recordLabel(r.record_type)}</span></td>
+          <td class="evidence-soh">${fmt(r.soh_percent,1)} %</td>
+          <td>${fmt(r.soc_display_percent,1)} %</td>
+          <td>${fmt(r.remaining_energy_kwh,2)} kWh</td>
+          <td>${t}</td>
+          <td>${r.odometer_km ? Math.round(r.odometer_km).toLocaleString("da-DK")+" km" : "—"}</td>
+          <td>${dateFmt(r.recorded_at)}</td>
+        </tr>`;
+      }).join("")}</tbody>
+    </table>`;
   }
 
   async function createVehicleFromForm(form) {
@@ -332,7 +363,7 @@
       .filter(r => r.recorded_at && r.record_type && r.client_record_id);
 
     if (!payload.length) {
-      setMessage(q("uploadMessage"), "CSV-filen indeholder ingen gyldige Battery Evidence-records.", "error");
+      setMessage(q("uploadMessage"), "CSV-filen indeholder ingen gyldige batterirecords.", "error");
       return;
     }
 
@@ -412,7 +443,7 @@
             q("uploadButton").disabled = true;
             q("previewButton").disabled = true;
           } else {
-            setMessage(q("uploadMessage"), `${parsedRows.length} Battery Evidence-records fundet.`, "success");
+            setMessage(q("uploadMessage"), `${parsedRows.length} batterirecords fundet.`, "success");
           }
         } catch (err) {
           setMessage(q("uploadMessage"), `Kunne ikke læse CSV: ${err.message || err}`, "error");

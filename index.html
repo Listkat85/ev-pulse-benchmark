@@ -12,7 +12,7 @@
     <aside class="sidebar">
       <div class="brand">
         <div class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 64 64" role="img">
+          <svg viewBox="0 0 64 64">
             <path d="M10 20h25c4 0 7 2 9 6l3 6 7-11" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M10 32h16l4-6 5 13 5-9 4 2" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
             <path d="M10 44h24" fill="none" stroke="currentColor" stroke-width="5.5" stroke-linecap="round"/>
@@ -25,21 +25,69 @@
       </div>
 
       <nav class="nav">
-        <button class="nav-item active" type="button" data-view="overview"><span>⌂</span> Overblik</button>
-        <button class="nav-item" type="button" data-view="upload"><span>⇧</span> Upload data</button>
-        <button class="nav-item" type="button" data-view="vehicle"><span>EV</span> Min bil</button>
+        <button class="nav-item active" type="button" data-view="overview">
+          <svg viewBox="0 0 24 24"><path d="M4 20V10m5 10V4m6 16v-7m5 7V7"/></svg><span>Overblik</span>
+        </button>
+        <button class="nav-item" type="button" data-view="upload">
+          <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 18v2h14v-2"/></svg><span>Upload data</span>
+        </button>
+        <button class="nav-item" type="button" data-view="vehicle">
+          <svg viewBox="0 0 24 24"><path d="M4 16l1.5-5h13L20 16M6 11l2-4h8l2 4M6 16h12v3H6z"/><circle cx="8" cy="18.5" r="1"/><circle cx="16" cy="18.5" r="1"/></svg><span>Min bil</span>
+        </button>
       </nav>
 
+      <div class="side-spacer"></div>
+
       <div class="sync-card">
-        <div class="status-dot" id="sideStatusDot"></div>
+        <div class="sync-row">
+          <span class="status-dot" id="sideStatusDot"></span>
+          <div>
+            <div class="sync-title" id="sideStatus">Forbinder…</div>
+            <div class="sync-vehicle" id="sideVehicle">EV Pulse Cloud</div>
+          </div>
+        </div>
+        <div class="sync-meta" id="sideMeta">Supabase</div>
+      </div>
+
+      <div class="profile-strip">
+        <div class="profile-avatar">EV</div>
         <div>
-          <div class="sync-title" id="sideStatus">Forbinder…</div>
-          <div class="sync-meta" id="sideMeta">Supabase</div>
+          <strong>EV Pulse</strong>
+          <span>Anonym profil</span>
         </div>
       </div>
     </aside>
 
     <main class="main">
+      <div class="cinematic-scene" aria-hidden="true">
+        <div class="sun"></div>
+        <div class="mountain mountain-a"></div>
+        <div class="mountain mountain-b"></div>
+        <div class="road"></div>
+        <svg class="rear-car" viewBox="0 0 420 230">
+          <defs>
+            <linearGradient id="rearPaint" x1="0" x2="1">
+              <stop offset="0" stop-color="#0d1821"/>
+              <stop offset=".55" stop-color="#263846"/>
+              <stop offset="1" stop-color="#0a1219"/>
+            </linearGradient>
+            <linearGradient id="tailLight" x1="0" x2="1">
+              <stop offset="0" stop-color="#c64146"/>
+              <stop offset=".5" stop-color="#ff6b6f"/>
+              <stop offset="1" stop-color="#c64146"/>
+            </linearGradient>
+          </defs>
+          <ellipse cx="213" cy="208" rx="153" ry="13" fill="#000" opacity=".4"/>
+          <path d="M84 88c14-35 37-56 70-65 42-12 105-12 146 1 31 10 51 31 66 65l16 27v57c0 18-12 31-30 33l-42 3-20-24H137l-20 24-43-4c-18-2-29-16-29-34v-55z" fill="url(#rearPaint)" stroke="#385264" stroke-width="2"/>
+          <path d="M113 82c18-28 40-42 73-48 33-5 67-4 98 5 25 7 42 21 55 43" fill="#101b24" stroke="#526f82" stroke-width="2"/>
+          <path d="M86 116c63-10 188-10 265 0" fill="none" stroke="url(#tailLight)" stroke-width="6" stroke-linecap="round"/>
+          <path d="M112 150h204" stroke="#657e8e" stroke-width="2" opacity=".5"/>
+          <path d="M184 151h58" stroke="#8fa8b5" stroke-width="3" opacity=".55"/>
+          <path d="M164 181h99" stroke="#080B0F" stroke-width="15" stroke-linecap="round"/>
+          <text x="214" y="186" fill="#738091" font-size="15" text-anchor="middle" font-family="Arial">EV6</text>
+        </svg>
+      </div>
+
       <header class="topbar">
         <div>
           <h1>EV Pulse Benchmark</h1>
@@ -50,7 +98,7 @@
 
       <section id="setupPanel" class="panel setup-panel hidden">
         <div>
-          <div class="eyebrow">Første opsætning</div>
+          <div class="eyebrow">FØRSTE OPSÆTNING</div>
           <h2>Fortæl os hvilken bil dataene tilhører</h2>
           <p>Der gemmes ingen VIN, nummerplade, navn eller position.</p>
         </div>
@@ -67,106 +115,174 @@
       </section>
 
       <section id="overviewView" class="view">
-        <div class="hero panel">
-          <div class="hero-car">
-            <div class="hero-badge">E-GMP</div>
-            <div class="car-silhouette" aria-hidden="true">
-              <svg viewBox="0 0 420 160">
-                <path d="M54 104c10-35 28-54 61-64 41-13 126-16 173-4 30 8 49 26 73 64l22 5c13 3 20 13 20 26v7H18v-10c0-11 7-20 18-23z" fill="currentColor" opacity=".14"/>
-                <path d="M86 93c18-34 36-44 74-50 43-7 98-7 136 2 24 6 39 17 59 48" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".9"/>
-                <path d="M31 110h355" stroke="currentColor" stroke-width="5" stroke-linecap="round" opacity=".72"/>
-                <circle cx="106" cy="118" r="25" fill="#080B0F" stroke="currentColor" stroke-width="5"/>
-                <circle cx="316" cy="118" r="25" fill="#080B0F" stroke="currentColor" stroke-width="5"/>
+        <section class="hero panel">
+          <div class="hero-left">
+            <div class="vehicle-chip">
+              <svg viewBox="0 0 24 24"><path d="M4 18V9m4 9V5m4 13v-7m4 7V3"/></svg>
+              <span id="vehicleChip">Kia EV6</span>
+            </div>
+            <div class="vehicle-meta" id="vehicleLine">Ingen bilprofil endnu</div>
+
+            <div class="side-car">
+              <svg viewBox="0 0 520 210">
+                <defs>
+                  <linearGradient id="carBody" x1="0" x2="1">
+                    <stop offset="0" stop-color="#13212b"/>
+                    <stop offset=".48" stop-color="#2f4656"/>
+                    <stop offset="1" stop-color="#101a22"/>
+                  </linearGradient>
+                  <linearGradient id="glass" x1="0" x2="1">
+                    <stop offset="0" stop-color="#172b38"/>
+                    <stop offset="1" stop-color="#0b151d"/>
+                  </linearGradient>
+                </defs>
+                <ellipse cx="260" cy="178" rx="205" ry="12" fill="#000" opacity=".32"/>
+                <path d="M53 139c13-34 35-55 69-67l65-24c25-9 66-13 116-11 61 2 108 13 139 31l35 24 18 11c12 7 19 18 20 32l2 18H27l3-19c2-13 10-22 23-25z" fill="url(#carBody)" stroke="#526f82" stroke-width="2"/>
+                <path d="M164 61c36-13 87-18 139-16 50 2 89 11 116 27l-54 3-46-3-55-1-77 2z" fill="url(#glass)" stroke="#486678" stroke-width="2"/>
+                <path d="M62 136h433" stroke="#7DB7D9" stroke-width="2.5" opacity=".45"/>
+                <path d="M67 123l52-10" stroke="#A7D9C4" stroke-width="4" stroke-linecap="round"/>
+                <circle cx="141" cy="151" r="35" fill="#080B0F" stroke="#385264" stroke-width="8"/>
+                <circle cx="141" cy="151" r="18" fill="#17202A" stroke="#7DB7D9" stroke-width="3" opacity=".8"/>
+                <circle cx="397" cy="151" r="35" fill="#080B0F" stroke="#385264" stroke-width="8"/>
+                <circle cx="397" cy="151" r="18" fill="#17202A" stroke="#7DB7D9" stroke-width="3" opacity=".8"/>
               </svg>
             </div>
           </div>
 
-          <div class="hero-copy">
-            <div class="eyebrow" id="vehicleLine">Ingen bilprofil endnu</div>
-            <h2><span id="heroSoh">—</span><span class="hero-unit"> % SoH</span></h2>
+          <div class="hero-health">
+            <div class="hero-label">SoH <span class="info-dot">i</span></div>
+            <div class="hero-number"><span id="heroSoh">—</span><span>%</span></div>
             <div class="evidence-pill">MÅLT · BMS</div>
-            <p id="heroInsight">Upload Battery Evidence CSV for at bygge din tidslinje.</p>
+            <p id="heroInsight">Upload batterihistorik for at bygge tidslinjen.</p>
           </div>
 
-          <div class="percentile">
-            <div class="eyebrow">Sammenligning</div>
+          <div class="hero-benchmark">
+            <div class="hero-label">Sammenligning</div>
             <div class="percentile-value" id="percentileValue">Afventer flådedata</div>
-            <div class="range-track"><span style="left: 50%"></span></div>
+            <div class="range-track">
+              <i></i>
+              <span style="left:50%"></span>
+            </div>
             <div class="range-labels"><span>Lavere</span><span>Median</span><span>Højere</span></div>
             <p id="cohortText">Benchmark aktiveres, når der er nok sammenlignelige biler.</p>
           </div>
-        </div>
+        </section>
 
-        <div class="metrics-grid">
+        <section class="metrics-grid">
           <article class="metric-card">
-            <div class="metric-label">SoH</div>
-            <div class="metric-value" id="metricSoh">—</div>
-            <div class="metric-meta" id="metricSohMeta">Ingen målinger</div>
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>
+            </div>
+            <div class="metric-copy">
+              <div class="metric-label">Tilstandsgrad (SoH) <span class="info-dot">i</span></div>
+              <div class="metric-value" id="metricSoh">—</div>
+              <div class="metric-meta" id="metricSohMeta">Ingen målinger</div>
+            </div>
+            <div class="metric-arrow">›</div>
           </article>
+
           <article class="metric-card">
-            <div class="metric-label">Remaining Energy @ 100 %</div>
-            <div class="metric-value" id="metricEnergy">—</div>
-            <div class="metric-meta" id="metricEnergyMeta">Kræver 100 % reference</div>
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 9-13h-6z"/></svg>
+            </div>
+            <div class="metric-copy">
+              <div class="metric-label">Tilgængelig energi @ 100 % <span class="info-dot">i</span></div>
+              <div class="metric-value" id="metricEnergy">—</div>
+              <div class="metric-meta" id="metricEnergyMeta">Kræver 100 % reference</div>
+            </div>
+            <div class="metric-arrow">›</div>
           </article>
+
           <article class="metric-card">
-            <div class="metric-label">Spændingsspredning</div>
-            <div class="metric-value" id="metricDelta">—</div>
-            <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 3-9 2 2h3"/></svg>
+            </div>
+            <div class="metric-copy">
+              <div class="metric-label">Spændingsspredning</div>
+              <div class="metric-value" id="metricDelta">—</div>
+              <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
+            </div>
+            <div class="metric-arrow">›</div>
           </article>
+
           <article class="metric-card">
-            <div class="metric-label">Batterihistorik</div>
-            <div class="metric-value" id="metricRecords">0</div>
-            <div class="metric-meta" id="metricRecordsMeta">observationer</div>
+            <div class="metric-icon">
+              <svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7zM15 3v5h5M10 12h6m-6 4h6"/></svg>
+            </div>
+            <div class="metric-copy">
+              <div class="metric-label">Batterihistorik</div>
+              <div class="metric-value" id="metricRecords">0</div>
+              <div class="metric-meta" id="metricRecordsMeta">observationer</div>
+            </div>
+            <div class="metric-arrow">›</div>
           </article>
-        </div>
+        </section>
 
         <section class="panel timeline-panel">
           <div class="section-heading">
-            <div>
-              <div class="eyebrow">Batteritidslinje</div>
-              <h3>SoH over kilometer</h3>
+            <div class="section-title-wrap">
+              <div class="section-icon">
+                <svg viewBox="0 0 24 24"><path d="M5 19V9m5 10V5m5 14V8m4 11V3"/></svg>
+              </div>
+              <div>
+                <h3>SoH over kilometer</h3>
+                <p>Udvikling i batteriets tilstandsgrad over tid og kørte kilometer.</p>
+              </div>
             </div>
-            <div class="legend"><span class="legend-line mint"></span> Din bil</div>
+            <div class="chart-toggle">
+              <span class="active"><i></i>Din bil</span>
+              <span><i class="dotted"></i>Flådegennemsnit</span>
+            </div>
           </div>
           <div id="sohChart" class="chart-wrap">
-            <div class="empty-state">Upload Battery Evidence CSV for at vise grafen.</div>
+            <div class="empty-state">Upload batterihistorik for at vise grafen.</div>
           </div>
         </section>
 
-        <section class="lower-grid">
-          <div class="panel">
+        <section class="bottom-grid">
+          <section class="panel evidence-panel">
             <div class="section-heading">
-              <div>
-                <div class="eyebrow">Seneste evidens</div>
-                <h3>Battery Evidence</h3>
+              <div class="section-title-wrap">
+                <div class="section-icon">
+                  <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6m-14 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
+                </div>
+                <div>
+                  <h3>Seneste evidens</h3>
+                  <p>Batterimålinger brugt til din historik.</p>
+                </div>
               </div>
             </div>
-            <div id="evidenceList" class="evidence-list">
+            <div id="evidenceList" class="evidence-table-wrap">
               <div class="empty-state">Ingen records endnu.</div>
             </div>
-          </div>
+          </section>
 
-          <div class="panel">
-            <div class="section-heading">
+          <aside class="panel benchmark-card">
+            <div class="section-title-wrap">
+              <div class="section-icon">
+                <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c.6-4 2.8-6 6-6s5.4 2 6 6m0-5c3.1.1 4.8 1.7 5.4 5"/></svg>
+              </div>
               <div>
-                <div class="eyebrow">Benchmark</div>
                 <h3>Din bil mod flåden</h3>
+                <p>Sammenlign din bil med andre, når der er nok flådedata.</p>
               </div>
             </div>
-            <div class="benchmark-placeholder">
-              <div class="benchmark-icon">↗</div>
-              <strong>Datagrundlaget bygges nu</strong>
+            <div class="benchmark-empty">
+              <div class="benchmark-glyph">
+                <svg viewBox="0 0 24 24"><path d="M5 19V12m5 7V7m5 12v-4m4 4V4"/></svg>
+              </div>
+              <strong>Afventer flådedata</strong>
               <p>Når mindst 5 sammenlignelige biler findes, viser vi median, percentiler og placering uden at udstille andre bilers rådata.</p>
             </div>
-          </div>
+          </aside>
         </section>
       </section>
 
       <section id="uploadView" class="view hidden">
-        <div class="panel upload-panel">
-          <div class="eyebrow">Manuel sync · MVP</div>
+        <section class="panel upload-panel">
+          <div class="eyebrow">MANUEL SYNC · MVP</div>
           <h2>Upload Battery Evidence CSV</h2>
-          <p>Brug CSV-filen fra <strong>EV Pulse → Mere → Batterihistorik</strong>. v0.1 gemmer kun strukturerede Battery Evidence-records.</p>
+          <p>Brug CSV-filen fra <strong>EV Pulse → Mere → Batterihistorik</strong>.</p>
 
           <label class="dropzone" id="dropzone">
             <input id="csvFile" type="file" accept=".csv,text/csv">
@@ -185,20 +301,20 @@
             <div class="preview-head"><strong>CSV-kontrol</strong><span id="previewCount"></span></div>
             <div id="previewContent"></div>
           </div>
-        </div>
+        </section>
       </section>
 
       <section id="vehicleView" class="view hidden">
-        <div class="panel">
+        <section class="panel vehicle-panel">
           <div class="section-heading">
             <div>
-              <div class="eyebrow">Bilprofil</div>
+              <div class="eyebrow">BILPROFIL</div>
               <h2>Min bil</h2>
             </div>
           </div>
           <form id="vehicleEditForm" class="vehicle-form"></form>
           <div id="vehicleEditMessage" class="form-message" aria-live="polite"></div>
-        </div>
+        </section>
       </section>
     </main>
   </div>
