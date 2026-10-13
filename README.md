@@ -1,26 +1,19 @@
-# EV Pulse Benchmark v0.3 · Illustration Match
+# EV Pulse Benchmark v0.4 · Master Reference Match
 
-Denne version er et målrettet design-pass efter den godkendte EV Pulse Benchmark-illustration.
+Denne version bygger direkte efter den godkendte reference:
+- fast mørk sidebar
+- cinematic hero-scene med EV6
+- EV6-sideprofil + SoH + benchmark i samme hero
+- fire intelligence cards
+- bred SoH-tidslinje
+- evidenstabel + flådekort
 
-## Visuelt ændret
-- Samme overordnede komposition som referenceillustrationen:
-  - mørk venstresidebar
-  - cinematic top-scene
-  - bil/SoH/benchmark hero
-  - fire intelligence cards
-  - bred SoH-tidslinje
-  - seneste evidens som tabel
-  - "Din bil mod flåden" som separat card
-- EV Pulse palette: #080B0F / #A7D9C4 / #7DB7D9
-- Data-first typografi og tabular numerals
-- Mint icon tiles og lav-kontrast surfaces
-- Ingen generiske marketing-slogans
-
-## Funktionalitet
-Supabase, anonymous auth, bilprofil, CSV-import, deduplikering og Battery Evidence er bevaret fra v0.2.
+## Vigtigt
+Ingen database- eller SQL-ændringer er nødvendige.
+Supabase, anonym auth, bilprofil, CSV-upload og deduplikering er bevaret.
 
 ## Deploy
-Erstat filerne i dit GitHub repository med indholdet fra denne mappe og commit.
-Vercel deployer automatisk den nye version.
+Erstat filerne i GitHub-repoet med indholdet her og commit.
+Vercel redeployer automatisk.
 
-Ingen ny SQL er nødvendig for dette design-pass.
+`assets/hero_ev6.png` er kun et visuelt hero-asset og indeholder ingen brugerdata.
