@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.1 · visual polish");
+  console.info("EV Pulse Benchmark v0.9.2 · precision");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -420,23 +420,45 @@
     return currentRecords.filter(r=>new Date(r.recorded_at).getTime()>=threshold);
   }
   function renderSohChart() {
-    const chart=q("sohChart");
-    const byKey = new Map();
-    chartRecordsForPeriod().filter(r=>num(r.soh_percent)>0 && num(r.odometer_km)!==null)
-      .forEach(r=>byKey.set(`${r.odometer_km}|${r.soh_percent}`,{x:Number(r.odometer_km),y:Number(r.soh_percent),date:r.recorded_at}));
-    const pts=[...byKey.values()].sort((a,b)=>a.x-b.x);
-    if (!pts.length) {chart.innerHTML='<div class="empty-state">Ingen SoH-data for den valgte periode.</div>';return;}
-    const w=940,h=175,L=44,R=13,T=14,B=25;
-    const minX=Math.min(0,Math.min(...pts.map(p=>p.x))),maxX=Math.max(20000,Math.ceil((Math.max(...pts.map(p=>p.x))+2000)/20000)*20000);
-    const minY=Math.min(85,Math.floor(Math.min(...pts.map(p=>p.y))/5)*5),maxY=Math.max(100,Math.ceil(Math.max(...pts.map(p=>p.y))/5)*5);
-    const sx=x=>L+(x-minX)/(maxX-minX)*(w-L-R), sy=y=>T+(maxY-y)/(maxY-minY)*(h-T-B);
-    let grids="",labels="";
-    for(let i=0;i<=3;i++){const y=minY+(maxY-minY)*i/3,yy=sy(y);grids+=`<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#b7cce0" opacity=".13"/>`;labels+=`<text x="${L-10}" y="${yy+4}" text-anchor="end" font-size="11" fill="#b8c8d8">${fmt(y,0)} %</text>`}
-    for(let i=0;i<=5;i++){const x=minX+(maxX-minX)*i/5,xx=sx(x);grids+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${h-B}" stroke="#b7cce0" opacity=".07"/>`;labels+=`<text x="${xx}" y="${h-7}" text-anchor="middle" font-size="11" fill="#bbc9d6">${Math.round(x).toLocaleString("da-DK")}</text>`}
-    const line=pts.map((p,i)=>`${i?"L":"M"}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(" ");
-    const marks=pts.map(p=>`<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="3.2" fill="#51b9ff" stroke="#0d1e2e" stroke-width="1.5"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString("da-DK")} km · ${dateFmt(p.date)}</title></circle>`).join("");
-    const fleet=currentBenchmark?.sample_size>=5 && num(currentBenchmark.median_soh)!==null ? `<line x1="${L}" x2="${w-R}" y1="${sy(currentBenchmark.median_soh)}" y2="${sy(currentBenchmark.median_soh)}" stroke="#a1b1c0" stroke-width="1.5" stroke-dasharray="5 5" opacity=".75"><title>Aktuel flådemedian, ikke historisk kurve</title></line>` : "";
-    chart.innerHTML=`<svg role="img" aria-label="SoH udvikling i BMS-målinger over kilometer" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grids}${labels}${fleet}<path d="${line}" fill="none" stroke="#50b5ff" stroke-width="2.5" stroke-dasharray="5 4"/>${marks}</svg>`;
+    const chart = q("sohChart");
+    const keyed = new Map();
+    chartRecordsForPeriod()
+      .filter(r => num(r.soh_percent) !== null && num(r.soh_percent) > 0 && num(r.odometer_km) !== null)
+      .forEach(r => keyed.set(`${r.odometer_km}|${r.soh_percent}`,
+        {x:Number(r.odometer_km),y:Number(r.soh_percent),date:r.recorded_at}));
+    const pts = [...keyed.values()].sort((a,b)=>a.x-b.x);
+    if (!pts.length) { chart.innerHTML='<div class="empty-state">Ingen SoH-data for den valgte periode.</div>';return; }
+
+    // Auto-zoom to the ACTUAL car mileage. A car with data at ~70,000 km
+    // must not show its entire history compressed into one dot at the far right.
+    const w=940,h=205,L=50,R=19,T=19,B=32;
+    const xlo=Math.min(...pts.map(p=>p.x)),xhi=Math.max(...pts.map(p=>p.x));
+    const xSpan=xhi-xlo;
+    const xPad=Math.max(1200,xSpan*.11);
+    const step= xSpan>50000?10000:xSpan>10000?5000:xSpan>3000?1000:500;
+    const minX=Math.max(0,Math.floor((xlo-xPad)/step)*step);
+    const maxX=Math.max(minX+step*4,Math.ceil((xhi+xPad)/step)*step);
+    const lowSoH=Math.min(...pts.map(p=>p.y)),highSoH=Math.max(...pts.map(p=>p.y));
+    const minY=Math.min(95,Math.max(75,Math.floor(lowSoH-2)));
+    const maxY=Math.min(105,Math.max(100,Math.ceil(highSoH+1)));
+    const sx=x=>L+(x-minX)/(maxX-minX)*(w-L-R);
+    const sy=y=>T+(maxY-y)/(maxY-minY)*(h-T-B);
+    let grids='',labels='';
+    for(let i=0;i<=4;i++) {
+      const y=minY+(maxY-minY)*i/4, yy=sy(y);
+      grids+=`<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#a9c6de" opacity=".16"/>`;
+      labels+=`<text x="${L-13}" y="${yy+4}" text-anchor="end" font-size="11" fill="#c6d7e5">${fmt(y,0)} %</text>`;
+    }
+    for(let i=0;i<=5;i++) {
+      const x=minX+(maxX-minX)*i/5,xx=sx(x);
+      grids+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${h-B}" stroke="#a9c6de" opacity=".12"/>`;
+      labels+=`<text x="${xx}" y="${h-9}" text-anchor="middle" font-size="11" fill="#b8cbdc">${Math.round(x).toLocaleString("da-DK")}</text>`;
+    }
+    const line=pts.map((p,i)=>`${i?'L':'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
+    const marks=pts.map(p=>`<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="3.6" fill="#54b9ff" stroke="#0b1b2b" stroke-width="2"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString('da-DK')} km · ${dateFmt(p.date)}</title></circle>`).join('');
+    // A single fleet median is *not* a historical fleet trend. Do not fabricate one.
+    const single=pts.length===1?`<text x="${Math.min(w-135,sx(pts[0].x)+14)}" y="${Math.max(22,sy(pts[0].y)-13)}" fill="#b8dcf6" font-size="11">Én måling · afventer udvikling</text>`:'';
+    chart.innerHTML=`<svg role="img" aria-label="SoH-udvikling: ${pts.length} registrerede målinger fra ${minX.toLocaleString('da-DK')} til ${maxX.toLocaleString('da-DK')} km" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grids}${labels}<path d="${line}" fill="none" stroke="#47b3ff" stroke-width="2.6" stroke-dasharray="4 4" stroke-linejoin="round" stroke-linecap="round"/>${marks}${single}</svg>`;
   }
 
   function renderBenchmark() {
@@ -462,7 +484,7 @@
     }
     if(!data || Number(data.sample_size)<5 || num(data.percentile)===null) {
       const silhouettes=[8,13,19,30,43,57,73,86,100,89,72,58,39,23,13];
-      box.innerHTML=`<div class="benchmark-placeholder with-silhouette"><div class="benchmark-silhouette" aria-hidden="true">${silhouettes.map(h=>`<i style="height:${h}%"></i>`).join("")}</div><strong>Afventer flådedata</strong><span>Mindst 5 sammenlignelige biler kræves, før vi viser en placering.</span><small>Baggrund: illustration · ingen flådestatistik</small></div>`;
+      box.innerHTML=`<div class="benchmark-placeholder with-silhouette"><div class="benchmark-silhouette" aria-hidden="true">${silhouettes.map(h=>`<i style="height:${h}%"></i>`).join("")}</div><strong>Afventer flådedata</strong><span>Mindst 5 sammenlignelige biler kræves, før vi viser en placering.</span><small>Illustration · ingen flådestatistik</small></div>`;
       return;
     }
     const p=Math.max(0,Math.min(100,num(data.percentile))), median=num(data.median_soh),low=num(data.p25_soh),high=num(data.p75_soh);

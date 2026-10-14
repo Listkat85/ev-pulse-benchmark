@@ -1,0 +1,124 @@
+/* EV Pulse Benchmark v0.9.2 · measured precision pass on MOCKUP.png.
+   This layer overrides presentation only. No Supabase, CSV, or vehicle-model logic changes. */
+:root{--precision-mint:#65e5b1;--precision-blue:#4cb5ff;--precision-border:rgba(159,191,220,.17)}
+html,body{width:100%;min-height:100%;}
+body{color:#f0f6fc;background:#0c1a28}
+@media(min-width:801px){
+  /* Increase sidebar width on wide screens: the original was visually cramped. */
+  .app-shell{grid-template-columns:clamp(148px,9vw,176px) minmax(0,1fr)}
+  .sidebar{padding:14px 6px 13px;background:linear-gradient(170deg,#223245 0%,#192a3d 27%,#101e2b 100%)}
+  .brand{padding:0 6px 24px;gap:8px}.brand-mark{width:29px;height:29px}
+  .brand-name{font-size:16px}.brand-sub{font-size:10px}
+  .nav-item{padding:10px 9px;font-size:11px;line-height:1.3;min-height:42px;gap:9px}
+  .nav-glyph{width:19px;flex:none}.nav-glyph svg{width:19px;height:19px}
+  .main{padding:0 12px 12px;overflow:hidden;
+     background:linear-gradient(180deg,transparent 0%,rgba(13,28,43,.04) 33%,#102131 75%,#101d2c 100%)}
+  .topbar{height:200px;padding:28px 14px 10px clamp(25px,2.4vw,37px)}
+  .topbar h1{font-size:clamp(40px,2.35vw,52px);font-weight:820}
+  .identity-sub{font-size:clamp(17px,1.18vw,23px)}
+  .identity-specs{margin-top:18px;gap:clamp(13px,1.5vw,26px)}
+  .spec{grid-template-columns:24px auto}.spec strong{font-size:clamp(12px,.8vw,16px)}
+  .spec small{font-size:clamp(9px,.59vw,12px)}
+  .dashboard-scenery{inset:-200px -12px auto;height:448px}
+  .dashboard-scenery .hero-image{top:-50px;width:100%;height:auto;aspect-ratio:3/1;object-fit:fill;opacity:1}
+  .dashboard-scenery .hero-photo-shading{background:linear-gradient(90deg,rgba(8,19,30,.78) 0%,rgba(8,19,30,.30) 39%,rgba(8,19,30,.04) 78%),linear-gradient(180deg,rgba(7,17,26,.13) 0%,rgba(7,17,26,.03) 47%,rgba(10,26,40,.64) 78%,#102131 100%)}
+  /* The front car is its own independent layer: no changes to rear hero assets. */
+  .front-car-stage{top:-15px;left:7px;width:min(40vw,690px);max-width:47%;z-index:3}
+  .front-car-stage:before{height:30%;bottom:2%;left:9%;right:9%;filter:blur(20px);background:rgba(0,0,0,.62)}
+  .front-car-stage img{filter:contrast(1.09) saturate(.93) drop-shadow(0 12px 16px rgba(0,0,0,.58))}
+  .front-car-note{position:absolute;bottom:-4px;left:15px;max-width:90%;font-size:9px}
+  .metrics-grid{margin:8px 0 9px 40%;gap:10px}
+  .metric-card{min-width:0;height:149px;padding:15px 13px;border-radius:10px;background:linear-gradient(150deg,rgba(34,51,65,.90),rgba(17,31,45,.94));border:1px solid var(--precision-border);box-shadow:0 8px 22px rgba(0,0,0,.25),inset 0 1px rgba(255,255,255,.055)}
+  .metric-label{font-size:clamp(10px,.69vw,13px)}
+  .metric-value{font-size:clamp(26px,1.72vw,33px);font-weight:760;letter-spacing:-.025em;margin:8px 0 10px}
+  .meter{height:11px}.metric-meta{font-size:clamp(9px,.57vw,11px);margin-top:11px}
+  .metric-subline{font-size:clamp(9px,.57vw,11px);line-height:1.35}
+  .panel{background:linear-gradient(150deg,rgba(28,47,63,.90),rgba(15,30,45,.92));border:1px solid rgba(160,193,225,.17);border-radius:12px;box-shadow:0 9px 24px rgba(0,0,0,.17),inset 0 1px rgba(240,255,255,.035)}
+  .analytics-grid{gap:10px;margin-top:10px;grid-template-columns:minmax(0,1.85fr) minmax(0,.98fr)}
+  .timeline-panel,.benchmark-card{height:235px;min-height:0}
+  .timeline-panel{padding:54px 14px 11px}
+  .benchmark-card{padding:13px 12px 11px}
+  .section-heading{min-height:25px}.section-symbol{width:27px;height:27px;font-size:21px}
+  .section-title-wrap h3{font-size:clamp(12px,.82vw,16px)}
+  .chart-wrap,.chart-wrap svg{height:147px}
+  .chart-wrap{overflow:hidden}
+  .chart-wrap svg text{font-family:Inter,'Segoe UI',sans-serif}
+  .benchmark-visualization{height:185px}
+  .benchmark-placeholder.with-silhouette{min-height:170px}
+  .benchmark-silhouette{opacity:.18;bottom:3px;}
+  .dashboard-bottom{grid-template-columns:minmax(0,1.25fr) minmax(0,1.02fr) minmax(0,.82fr);gap:10px;margin-top:10px}
+  .dashboard-bottom>.panel{height:max(181px,calc(100dvh - 650px));max-height:390px;padding:13px 12px 10px}
+  .evidence-table-wrap{max-height:calc(100% - 33px);overflow:auto}
+  .evidence-table th,.evidence-table td{font-size:clamp(9px,.61vw,12px);padding:7px 9px}
+  .fingerprint-chart{height:calc(100% - 49px);min-height:115px}
+  .fingerprint-chart svg{height:100%;width:min(95%,380px)}
+  .shortcut-grid{gap:9px;margin-top:9px;height:calc(100% - 34px);grid-template-rows:repeat(2,minmax(0,1fr))}
+  .shortcut{min-height:0;padding:12px 10px;grid-template-columns:clamp(26px,2.3vw,40px) minmax(0,1fr);grid-template-rows:auto auto}
+  .shortcut span{font-size:clamp(23px,1.55vw,31px)}
+  .shortcut strong{font-size:clamp(10px,.67vw,13px)}.shortcut small{font-size:clamp(9px,.59vw,11px)}
+}
+/* The screenshot reference is 1120x747; preserve its compact proportions. */
+@media(min-width:801px) and (max-width:1300px){
+  .front-car-stage{width:min(40vw,455px);left:-5px;top:-16px}
+  .metrics-grid{margin-left:39.5%}
+  .metric-card{height:139px;padding:12px 10px}
+  .metric-value{font-size:26px}.metric-label{font-size:10px}
+  .analytics-grid{grid-template-columns:minmax(0,1.9fr) minmax(0,.95fr)}
+  .timeline-panel,.benchmark-card{height:222px}
+  .timeline-panel{padding-top:63px}.chart-wrap,.chart-wrap svg{height:131px}
+  .dashboard-bottom>.panel{height:max(174px,calc(100dvh - 650px));padding:10px 9px}
+  .shortcut{padding:8px 7px}
+  .fingerprint-chart svg{width:min(100%,315px)}
+  .sidebar .nav-item{font-size:10px}
+}
+/* At intermediate widths, no clipping of metrics or the car. */
+@media(min-width:801px) and (max-width:1020px){
+  .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .metric-card{height:119px}
+  .analytics-grid{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)}
+  .front-car-stage{max-width:38%}
+  .dashboard-bottom{grid-template-columns:1fr 1fr}
+  .dashboard-bottom>.shortcuts-panel{grid-column:span 2}
+}
+@media(min-width:1301px) and (max-height:760px){
+  .topbar{height:178px;padding-top:18px}
+  .dashboard-scenery{top:-178px}
+  .metric-card{height:133px}
+  .timeline-panel,.benchmark-card{height:205px}
+  .timeline-panel{padding-top:48px}.chart-wrap,.chart-wrap svg{height:133px}
+  .dashboard-bottom>.panel{height:190px}
+}
+/* Mobile: do not overlap with fixed-position front car or hide action controls. */
+@media(max-width:800px){
+  .front-car-stage img{filter:contrast(1.09) saturate(.93) drop-shadow(0 13px 16px rgba(0,0,0,.6))}
+  .dashboard-bottom>.panel{max-height:none}
+  .metric-card{border:1px solid var(--precision-border)}
+  .benchmark-card,.timeline-panel{overflow:hidden}
+  .front-car-stage{pointer-events:none}
+}
+/* Final overlap pass after side-by-side screenshot review. */
+@media(min-width:801px){
+  .metrics-grid{position:relative;z-index:5}
+  .front-car-stage{top:-34px}
+  .analytics-grid{margin-top:8px}
+  .dashboard-bottom>.panel{height:max(174px,calc(100dvh - 607px))}
+}
+@media(min-width:801px) and (max-width:1300px){
+  .front-car-stage{top:-31px}
+  .metrics-grid{margin-bottom:8px}
+  .timeline-panel,.benchmark-card{height:218px}
+  .dashboard-bottom>.panel{height:max(174px,calc(100dvh - 607px))}
+  .dashboard-scenery .hero-image{top:-66px}
+}
+@media(min-width:1301px){
+  .front-car-stage{top:-64px;width:min(34vw,590px);max-width:40%;left:11px}
+  .metric-card{height:142px}
+  .dashboard-scenery .hero-image{top:-92px}
+  .timeline-panel,.benchmark-card{height:221px}
+  .timeline-panel{padding-top:53px}
+  .chart-wrap,.chart-wrap svg{height:135px}
+}
+@media(min-width:1301px) and (max-height:760px){
+  .front-car-stage{top:-50px;width:min(30vw,510px)}
+  .dashboard-bottom>.panel{height:184px}
+}
