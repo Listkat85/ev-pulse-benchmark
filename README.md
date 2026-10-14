@@ -1,3 +1,32 @@
+# EV Pulse Benchmark v0.9.4 – Mockup Code Fix
+
+Opdatering **af den eksisterende kode**, ikke en billedmockup. Fortsæt fra v0.9.3.
+
+## Rettelser
+1. **Cellebalance:** Den farvede grøn → lime → gul → orange → rød gradient er genetableret. Regressionen skyldtes, at `.meter` overskrev `.cell-meter` i et senere stylesheet. `#deltaMeter` fungerer som hvid positionsindikator oven på den farvede skala. Skalaen er visuel og ikke et dokumenteret diagnose-grænseskema.
+2. **Sidebar:** Præcis 148 px ved referencebredde, navigationsstart y=77 px ved 1120×755, mørk grafitgradient, diskret blå markering og label **Indstillinger** som i det godkendte screenshot. Menupunkternes `data-view` og klikhandlers er bevaret.
+3. **Frontbil:** Bevarer særskilt 3/4-frontkomponent (ikke hero-bilen bagfra); reparerer små UI-fragmenter i de allerede eksisterende kildeudsnit og tilpasser placering, lys/kontrast og kontakt-/vejsløring med CSS. Ingen nye AI-genererede billeder eller ny hero. Der er fortsat begrænset fotokvalitet i den eksisterende mockup-baserede forfra-kilde – et fuldkomment fotografisk 1:1-match kræver et rent originalbillede.
+4. **Placering:** Ved 1120×755 begynder KPI-kortene omtrent x=492/y=202, grafblokkene y=349 og nederste række y=577. Dette er målt mod godkendt `MOCKUP.png`.
+5. **Ikoner og tekst:** De eksisterende batteri-, vej-, celle- og termometer-SVG'er bevares. Ingen etiketter i de fire KPI'er overskrides i den isolerede browsertest.
+
+## Sikkerhed for eksisterende funktioner
+- `app.js` er uændret siden v0.9.3 (kildeidentisk).
+- Supabase-konfiguration, SQL, CSV-import/-eksport, batteriberegninger og bilprofiler er bevaret.
+- Reel rækkevidde og reelle flådepercentiler vises stadig ikke, medmindre data understøtter dem. Demo-skærmen markerer syntetiske eksempler tydeligt.
+- Bagfra-hero-billederne er bevaret uden ændring.
+
+## Test
+- JavaScript: `node --check app.js` bestået.
+- Isoleret Chromium: 1120×755, 1792×857, 1916×906, 390×844: ingen JavaScript-fejl eller horisontal overflow; `.cell-meter` har gradient på alle fire bredder; alle fire KPI-SVG'er vises.
+- Menu-interaktion: Indstillinger → Oversigt bestået.
+- ZIP-integritet kontrolleret.
+- Live Supabase, GitHub-hosting og reel brugerkonto er **ikke** testet i udviklingsmiljøet.
+
+## Git
+Udpak filerne i roden af dit eksisterende repository, overskriv gamle filer, behold `.git`, og commit/push. `index.html` indlæser den nye sidste stylesheet `dashboard-v094.css`. Ryd eventuelt browsercache eller foretag hård genindlæsning efter deployment (Ctrl+F5).
+
+---
+
 # EV Pulse Benchmark v0.9.3 · Detail Pass
 
 Denne version bygger videre på **v0.9.2** og følger brugerens godkendte `MOCKUP.png`.

@@ -1,0 +1,160 @@
+/* EV Pulse Benchmark v0.9.4: visual corrections grounded in MOCKUP.png.
+   Only CSS/asset cleanup; no battery evidence, CSV, Supabase or fleet calculations changed.
+   Placed LAST to resolve regressions from v091/v092/v093 cascades. */
+:root {
+  --mock-blue: #4badf0;
+  --mock-green: #4fdda5;
+}
+
+/* FIX 1: The v091 `.meter` selector overwrote `.cell-meter` because it came later.
+   Make the colored range independent of the marker width: 119 mV must not
+   turn the whole scale grey. Retain the white observation indicator. */
+.metric-card .meter.cell-meter {
+  background: linear-gradient(90deg,
+    #20b960 0%, #54d566 19%, #a3dd4d 39%,
+    #f4d94f 55%, #f1a94e 73%, #e54853 100%);
+  border-radius: 5px;
+  min-height: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.metric-card .meter.cell-meter > #deltaMeter {
+  display:block;
+  background: transparent;
+  border-right: 2px solid rgba(255,255,255,.96);
+  border-radius: 0;
+  height: 100%;
+  min-height: 10px;
+  box-shadow: none;
+  transition: width .35s ease;
+}
+
+/* FIX 2: Reference sidebar = 147 px with textured graphite, 7 calm rows,
+   luminous blue active strip and discreet bottom connection status. */
+@media (min-width:801px) {
+  .app-shell { grid-template-columns: 148px minmax(0, 1fr); }
+  .sidebar {
+    padding: 15px 6px 14px;
+    border-right: 1px solid rgba(112,156,193,.14);
+    background:
+      radial-gradient(ellipse 130px 250px at 28% 38%,rgba(137,165,183,.075),transparent 90%),
+      radial-gradient(ellipse 140px 260px at 100% 70%,rgba(71,102,132,.12),transparent 100%),
+      linear-gradient(180deg,#182634 0%,#152331 18%,#122131 45%,#121f2c 71%,#101c2a 100%);
+    box-shadow: 3px 0 20px rgba(0,0,0,.17),inset -1px 0 rgba(255,255,255,.025);
+  }
+  .sidebar .brand { padding: 0 7px 23px; gap:7px; }
+  .sidebar .brand-mark { width:31px; height:31px; color:#4cb8ff; }
+  .sidebar .brand-name { font-size:17px; }
+  .sidebar .brand-sub { font-size:10px; }
+  .sidebar .nav { gap:4px; }
+  .sidebar .nav-item {
+    height:38px; min-height:38px; border-radius:6px; font-size:11px;
+    gap:10px; padding:8px 10px; font-weight:550;
+    color:#d8e2ef; border:1px solid transparent;
+    box-shadow:none;
+  }
+  .sidebar .nav-item .nav-glyph { width:20px;height:20px;color:#d3e3ee; }
+  .sidebar .nav-item .nav-glyph svg { width:18px;height:18px;stroke-width:1.7; }
+  .sidebar .nav-item.active {
+    border-color:rgba(100,171,229,.19);
+    border-left-color:#58c1ff;
+    color:#7dccff;
+    background:linear-gradient(90deg,rgba(61,121,175,.44),rgba(67,111,155,.30));
+    box-shadow:inset 2px 0 0 #51b9ff;
+  }
+  .sidebar .nav-item.active .nav-glyph { color:#63c1ff; }
+  .sidebar .sync-card { padding:8px 7px; }
+  .sidebar .status-dot {width:9px;height:9px;}
+  .sidebar .sync-meta {font-size:9px;line-height:1.4;}
+}
+
+/* FIX 3: the front car must read as a physical object on the coast road,
+   NOT as an overexposed sticker pasted across the chart. Use its existing
+   original cutout; maintain full opacity, consistent ground/contact shadow,
+   and keep it separate from the rear-facing hero image. */
+.front-car-stage { isolation: isolate; }
+.front-car-stage img {
+  opacity: 1 !important;
+  width:100%;height:auto;
+  object-fit:contain;
+  image-rendering:auto;
+  filter: brightness(.88) contrast(1.14) saturate(.90)
+          drop-shadow(0 10px 9px rgba(0,0,0,.49)) !important;
+}
+.front-car-stage::before {
+  content:"";
+  position:absolute;
+  left: 9%; right: 2%; bottom: 0%;
+  height: 18%;
+  border-radius:50%;
+  background:radial-gradient(ellipse at 50% 45%,rgba(0,0,0,.64),rgba(0,0,0,.22) 61%,transparent 80%);
+  filter:blur(11px);
+  pointer-events:none;
+  z-index:-1;
+}
+.front-car-stage .front-car-note { display:none; }
+
+/* FIX 4: screenshot-specific position: 1120px mockup metric cards start x≈495,
+   not x≈534. Header-to-card spacing must align to chart upper edge. */
+@media (min-width:801px) and (max-width:1300px) {
+  .metrics-grid { margin-left:35%; margin-top:2px; gap:8px; }
+  .front-car-stage { left:-37px; top:-27px; width:min(44%,430px); max-width:47%; }
+  .metric-card { height:139px; padding:11px 10px 9px; }
+  .metric-card .metric-label { font-size:10px;gap:6px; }
+  .metric-card .metric-value { font-size:25px; margin:6px 0 9px; }
+  .metric-card .metric-meta { margin-top:9px; font-size:9px; }
+  .metric-card .metric-subline { font-size:9px; }
+}
+
+/* Big monitor: keep good density, avoid the giant empty lower strip, and
+   place front car near the card top without drowning the model labels. */
+@media(min-width:1301px) {
+  .metrics-grid { margin-left:39.1%; margin-top:3px; gap:10px; }
+  .front-car-stage { left:7px;top:-35px;width:clamp(470px,27vw,520px);max-width:36%; }
+  .metric-card {height:152px;}
+  .metric-card .metric-value {margin:6px 0 9px;}
+  .dashboard-bottom > .panel { min-height:210px; }
+}
+
+/* FIX 5: link/graphs/shortcut controls should keep mockup scale.
+   Do not fake fleet or range stats where data are missing. */
+.sidebar .nav-item:focus-visible,.shortcut:focus-visible {
+  outline:2px solid #71c9fa;outline-offset:2px;
+}
+.metric-card .kpi-icon-battery,.metric-card .kpi-icon-cells {color:#49dfa5;}
+.metric-card .kpi-icon-road,.metric-card .kpi-icon-thermo {color:#51bfff;}
+.metric-card .metric-label{color:#e1edf7;}
+.panel{border-color:rgba(151,183,210,.17)}
+.chart-wrap{overflow:hidden}
+@media (max-width:800px) {
+  .front-car-stage {margin-top:-15px;}
+  .front-car-stage img {filter:brightness(.9) contrast(1.11) saturate(.93) drop-shadow(0 10px 11px rgba(0,0,0,.48))!important;}
+  .metric-card .meter.cell-meter{min-height:9px}
+}
+
+/* The metrics were given z-index:5 in v092 (801–1300px), which made the
+   rectangle visibly slice through the bumper. Restore intentional layering:
+   front car sits above the card BACKGROUND while remaining clear of KPI text. */
+@media(min-width:801px) and (max-width:1300px) {
+  .front-car-stage {left:-48px;top:-26px;width:400px;max-width:45%;z-index:6}
+  .metrics-grid {z-index:5;}
+  .metric-card{position:relative;}
+  .topbar{padding-left:15px;padding-top:39px;}
+  .sidebar .brand {padding-bottom:29px;}
+}
+@media(min-width:1301px) {
+  .front-car-stage {z-index:6;}
+  .metrics-grid {z-index:5;}
+  .topbar {padding-left:19px; padding-top:34px;}
+}
+/* Lower-road reflection and wheel contact keep the silhouette grounded rather
+   than floating over the panel. CSS-only, no new photographic image used. */
+.front-car-stage::before {
+  background:
+    radial-gradient(ellipse 65% 28% at 46% 82%,rgba(0,0,0,.76),transparent 93%),
+    radial-gradient(ellipse 84% 43% at 50% 96%,rgba(85,111,130,.20),transparent 100%);
+  height:25%;bottom:-3%;filter:blur(8px);
+}
+@media(min-width:801px){
+  .sidebar .nav-item.active .nav-glyph svg{fill:rgba(83,172,241,.10)}
+}

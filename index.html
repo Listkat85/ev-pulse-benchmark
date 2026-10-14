@@ -4,12 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080B0F">
-  <title>EV Pulse Benchmark · v0.9.3</title>
+  <title>EV Pulse Benchmark · v0.9.4</title>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./dashboard-v09.css">
   <link rel="stylesheet" href="./dashboard-v091.css">
   <link rel="stylesheet" href="./dashboard-v092.css">
   <link rel="stylesheet" href="./dashboard-v093.css">
+  <link rel="stylesheet" href="./dashboard-v094.css">
 </head>
 <body>
 <div class="app-shell">
@@ -35,7 +36,7 @@
       <button class="nav-item" type="button" data-view="compare"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-7m5 7V9m5 11V4m5 16v-9"/><path d="M2 20h20"/></svg></span><span>Sammenligning</span></button>
       <button class="nav-item" type="button" data-view="fingerprint"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-9 9c0 4 1 7 2 9m7-13a4 4 0 0 0-4 4c0 4 .2 8-1 11m5-15a4 4 0 0 1 4 4c0 4-1 7-2 10m-2-6c0 3 0 5-1 7m10-9c.1-1 .1-2 0-3a9 9 0 0 0-9-8"/></svg></span><span>Battery<br>Fingerprint</span></button>
       <button class="nav-item" type="button" data-view="upload"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h5M9 12h7M9 16h7"/></svg></span><span>Data</span></button>
-      <button class="nav-item" type="button" data-view="vehicle"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6"/><circle cx="12" cy="12" r="4"/></svg></span><span>Indstillinger · Min bil</span></button>
+      <button class="nav-item" type="button" data-view="vehicle" title="Indstillinger for Min bil"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6"/><circle cx="12" cy="12" r="4"/></svg></span><span>Indstillinger</span></button>
     </nav>
 
     <div class="side-spacer"></div>
@@ -145,7 +146,7 @@
         <article class="metric-card">
           <div class="metric-label"><svg class="kpi-icon kpi-icon-cells" viewBox="0 0 24 24" role="img" aria-label="Battericeller" fill="none"><rect x="2.8" y="6.1" width="18.4" height="12.1" rx="2.1"/><path d="M7.3 6.7v10.8M12 6.7v10.8M16.7 6.7v10.8M10 3.5h4M10 20.8h4"/><path class="cell-center" d="M9 10.2h6"/></svg> Cellebalance</div>
           <div class="metric-value" id="metricDelta">—</div>
-          <div class="meter cell-meter"><span class="meter-fill" id="deltaMeter"></span></div>
+          <div class="meter cell-meter" role="img" aria-label="Illustrativ cellebalancefarveskala, ikke et diagnostisk grænseskema" title="Visuel skala – vurder altid celledelta ved sammenlignelige SoC og temperaturer"><span class="meter-fill" id="deltaMeter"></span></div>
           <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
           <div class="metric-subline" id="metricDeltaContext">Afhænger af SoC og belastning</div>
         </article>
