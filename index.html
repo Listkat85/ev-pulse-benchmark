@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#080B0F">
   <title>EV Pulse Benchmark</title>
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./dashboard-v09.css">
 </head>
 <body>
 <div class="app-shell">
@@ -24,19 +25,14 @@
       </div>
     </div>
 
-    <nav class="nav">
-      <button class="nav-item active" type="button" data-view="overview">
-        <svg viewBox="0 0 24 24"><path d="M4 20V10m5 10V4m6 16v-7m5 7V7"/></svg>
-        <span>Overblik</span>
-      </button>
-      <button class="nav-item" type="button" data-view="upload">
-        <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0-4 4m4-4 4 4M5 18v2h14v-2"/></svg>
-        <span>Upload data</span>
-      </button>
-      <button class="nav-item" type="button" data-view="vehicle">
-        <svg viewBox="0 0 24 24"><path d="M4 16l1.5-5h13L20 16M6 11l2-4h8l2 4M6 16h12v3H6z"/><circle cx="8" cy="18.5" r="1"/><circle cx="16" cy="18.5" r="1"/></svg>
-        <span>Min bil</span>
-      </button>
+    <nav class="nav" aria-label="Hovedmenu">
+      <button class="nav-item active" type="button" data-view="overview"><span class="nav-glyph">⌂</span><span>Oversigt</span></button>
+      <button class="nav-item" type="button" data-view="battery"><span class="nav-glyph">▯</span><span>Batteri</span></button>
+      <button class="nav-item" type="button" data-view="history"><span class="nav-glyph">◷</span><span>Historik</span></button>
+      <button class="nav-item" type="button" data-view="compare"><span class="nav-glyph">▥</span><span>Sammenligning</span></button>
+      <button class="nav-item" type="button" data-view="fingerprint"><span class="nav-glyph">◎</span><span>Battery<br>Fingerprint</span></button>
+      <button class="nav-item" type="button" data-view="upload"><span class="nav-glyph">▤</span><span>Data</span></button>
+      <button class="nav-item" type="button" data-view="vehicle"><span class="nav-glyph">⚙</span><span>Indstillinger · Min bil</span></button>
     </nav>
 
     <div class="side-spacer"></div>
@@ -63,12 +59,26 @@
   </aside>
 
   <main class="main">
-    <header class="topbar">
-      <div>
-        <h1>EV Pulse Benchmark</h1>
-        <p>Batterihistorik, dokumentation og sammenligning.</p>
+    <header class="topbar" id="dashboardHeader">
+      <div class="identity-head">
+        <button type="button" class="identity-edit" id="editVehicleFromHero" title="Rediger bil under Min bil">
+          <h1 id="vehicleChip">Kia EV6</h1>
+          <span class="identity-sub" id="heroModelDescription">Long Range RWD (2023) <span aria-hidden="true">›</span></span>
+        </button>
+        <div class="identity-specs" aria-label="Bilens specifikationer">
+          <div class="spec"><span class="spec-symbol">▯</span><strong id="specBattery">—</strong><small>Nominel kapacitet</small></div>
+          <div class="spec"><span class="spec-symbol">⚯</span><strong id="specDrive">—</strong><small>Drivlinje</small></div>
+          <div class="spec"><span class="spec-symbol">▦</span><strong id="specYear">—</strong><small>Modelår</small></div>
+          <div class="spec"><span class="spec-symbol">◉</span><strong id="specColor">—</strong><small>Farve</small></div>
+        </div>
+        <span id="vehicleLine" class="screen-reader-only">Ingen bilprofil endnu</span>
       </div>
-      <div class="connection-pill" id="connectionPill">Forbinder…</div>
+      <div class="header-tools">
+        <span id="connectionPill" class="connection-pill" aria-live="polite">Forbinder…</span>
+        <button class="header-tool" type="button" id="headerDataButton" title="Importer data" aria-label="Importer data">☁</button>
+        <button class="header-tool" type="button" id="headerSettingsButton" title="Min bil" aria-label="Indstillinger for Min bil">⚙</button>
+        <span class="header-avatar" aria-hidden="true">EV</span>
+      </div>
     </header>
 
     <section id="setupPanel" class="panel setup-panel hidden">
@@ -78,165 +88,111 @@
         <p>Der gemmes ingen VIN, nummerplade, navn eller position.</p>
       </div>
       <form id="vehicleForm" class="vehicle-form">
-        <label>Mærke<input name="manufacturer" value="Kia" required></label>
-        <label>Model<input name="model" value="EV6" required></label>
+        <label>Mærke<input name="manufacturer" value="Kia" readonly></label>
+        <label>Model<input name="model" value="EV6" readonly></label>
         <label>Drivlinje
           <select name="variant"><option value="RWD">RWD</option><option value="AWD">AWD</option></select>
         </label>
         <label>Udstyrsvariant
           <select name="trim_level"><option value="Standard">EV6 Standard</option><option value="GT-Line">GT-Line</option><option value="GT Performance">GT (Performance)</option></select>
         </label>
-        <label>Modelår<input name="model_year" type="number" value="2023" min="2018" max="2035"></label>
-        <label>Batteri, kWh<input name="battery_nominal_kwh" type="number" step="0.1" value="77.4"></label>
-        <label>Platform<input name="platform" value="E-GMP" required></label>
+        <label>Modelår<input name="model_year" type="number" value="2023" min="2021" max="2032"></label>
+        <label>Generation<select name="generation"><option value="original">Oprindelig</option><option value="facelift">Facelift</option></select></label>
+        <label>Batterivariant<select name="battery_pack"><option value="long">Long Range</option><option value="standard">Standard Range</option></select></label>
+        <label>Fabriksbatteri<input name="battery_nominal_kwh" value="77.4" readonly tabindex="-1"></label>
+        <label>Platform<input name="platform" value="E-GMP" readonly></label>
         <button class="primary-btn" type="submit">Gem bilprofil</button>
       </form>
       <div id="vehicleFormMessage" class="form-message" aria-live="polite"></div>
     </section>
 
-    <section id="overviewView" class="view">
-      <section class="hero panel" id="heroPanel">
-        <div class="hero-photo" id="heroPhoto" aria-hidden="true">
+    <section id="overviewView" class="view dashboard-view">
+      <div class="dashboard-scenery" aria-hidden="true">
+        <div class="hero-photo" id="heroPhoto">
           <div class="hero-photo-backdrop"></div>
-          <img id="heroImage" class="hero-image"
-               src="./assets/heroes/gt-line/hero_gtline_klm_moonscape.png"
-               alt="" decoding="async" fetchpriority="high">
+          <img id="heroImage" class="hero-image" src="./assets/heroes/gt-line/hero_gtline_klm_moonscape.png" alt="" decoding="async" fetchpriority="high">
           <div class="hero-photo-shading"></div>
         </div>
+      </div>
+      <div id="heroAssetStatus" class="hero-image-error hidden" role="status"></div>
+      <div id="heroVersionBadge" class="hidden">GT-Line</div>
+      <p id="heroInsight" class="screen-reader-only">Ingen målinger endnu.</p>
+      <span id="heroSoh" class="screen-reader-only">—</span>
 
-        <div class="hero-config">
-          <div class="vehicle-row">
-            <div class="vehicle-chip">
-              <svg viewBox="0 0 24 24"><path d="M4 18V9m4 9V5m4 13v-7m4 7V3"/></svg>
-              <span id="vehicleChip">Kia EV6</span>
-            </div>
-            <div class="vehicle-meta" id="vehicleLine">Ingen bilprofil endnu</div>
-          </div>
-          <button type="button" id="editVehicleFromHero" class="hero-edit-link">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9M4 16.5V20h3.5L19 8.5 15.5 5 4 16.5z"/></svg>
-            Rediger bil under Min bil
-          </button>
-        </div>
+      <div class="front-car-stage">
+        <img id="frontVehicleImage" src="./assets/vehicles/front/ev6-front-moonscape.png" alt="Kia EV6 set skråt forfra" decoding="async">
+        <div id="frontVehicleNote" class="front-car-note" aria-live="polite"></div>
+      </div>
 
-        <div class="hero-health">
-          <div class="hero-label">SoH <span class="info-dot">i</span></div>
-          <div class="hero-number"><span id="heroSoh">—</span><span>%</span></div>
-          <div class="evidence-pill">MÅLT · BMS</div>
-          <p id="heroInsight">Upload batterihistorik for at bygge tidslinjen.</p>
-        </div>
-
-        <div class="hero-version-badge" id="heroVersionBadge">GT-Line</div>
-        <div id="heroAssetStatus" class="hero-image-error hidden" role="status" aria-live="polite"></div>
-      </section>
-
-      <section class="metrics-grid">
+      <section id="batterySummary" class="metrics-grid" aria-label="Batteristatus">
         <article class="metric-card">
-          <div class="metric-icon">
-            <svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 11c0 5.4-7 10-7 10z"/></svg>
-          </div>
-          <div class="metric-copy">
-            <div class="metric-label">Tilstandsgrad (SoH) <span class="info-dot">i</span></div>
-            <div class="metric-value" id="metricSoh">—</div>
-            <div class="metric-meta" id="metricSohMeta">Ingen målinger</div>
-          </div>
-          <div class="metric-arrow">›</div>
+          <div class="metric-label"><span class="mini-symbol mint">▯</span> BMS SoH</div>
+          <div class="metric-value" id="metricSoh">—</div>
+          <div class="meter"><span class="meter-fill green" id="sohMeter"></span></div>
+          <div class="metric-meta" id="metricSohMeta">Ingen målinger</div>
+          <div class="metric-subline" id="metricCapacityEstimate">Estimeret kapacitet: —</div>
         </article>
-
         <article class="metric-card">
-          <div class="metric-icon">
-            <svg viewBox="0 0 24 24"><path d="M13 2 5 13h6l-1 9 9-13h-6z"/></svg>
-          </div>
-          <div class="metric-copy">
-            <div class="metric-label">Tilgængelig energi @ 100 % <span class="info-dot">i</span></div>
-            <div class="metric-value" id="metricEnergy">—</div>
-            <div class="metric-meta" id="metricEnergyMeta">Kræver 100 % reference</div>
-          </div>
-          <div class="metric-arrow">›</div>
+          <div class="metric-label"><span class="mini-symbol icy">∕∕</span> Rækkevidde (est.)</div>
+          <div class="metric-value" id="metricRange">—</div>
+          <div class="meter"><span class="meter-fill blue" id="rangeMeter"></span></div>
+          <div class="metric-meta" id="metricRangeMeta">Afventer forbrugsdata</div>
+          <div class="metric-subline">Forventet ved 100 % SoC</div>
         </article>
-
         <article class="metric-card">
-          <div class="metric-icon">
-            <svg viewBox="0 0 24 24"><path d="M3 12h4l2-7 4 14 3-9 2 2h3"/></svg>
-          </div>
-          <div class="metric-copy">
-            <div class="metric-label">Spændingsspredning</div>
-            <div class="metric-value" id="metricDelta">—</div>
-            <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
-          </div>
-          <div class="metric-arrow">›</div>
+          <div class="metric-label"><span class="mini-symbol mint">▥</span> Cellebalance</div>
+          <div class="metric-value" id="metricDelta">—</div>
+          <div class="meter cell-meter"><span class="meter-fill" id="deltaMeter"></span></div>
+          <div class="metric-meta" id="metricDeltaMeta">Ingen målinger</div>
+          <div class="metric-subline" id="metricDeltaContext">Afhænger af SoC og belastning</div>
         </article>
-
         <article class="metric-card">
-          <div class="metric-icon">
-            <svg viewBox="0 0 24 24"><path d="M7 3h8l4 4v14H7zM15 3v5h5M10 12h6m-6 4h6"/></svg>
-          </div>
-          <div class="metric-copy">
-            <div class="metric-label">Batterihistorik</div>
-            <div class="metric-value" id="metricRecords">0</div>
-            <div class="metric-meta" id="metricRecordsMeta">observationer</div>
-          </div>
-          <div class="metric-arrow">›</div>
+          <div class="metric-label"><span class="mini-symbol icy">♧</span> Temperatur</div>
+          <div class="metric-value" id="metricTemp">—</div>
+          <div class="meter"><span class="meter-fill blue" id="tempMeter"></span></div>
+          <div class="metric-meta" id="metricTempMeta">Batteritemperatur</div>
+          <div class="metric-subline" id="metricTempContext">Seneste registrering</div>
         </article>
       </section>
 
-      <section class="panel timeline-panel">
-        <div class="section-heading">
-          <div class="section-title-wrap">
-            <div class="section-icon">
-              <svg viewBox="0 0 24 24"><path d="M5 19V9m5 10V5m5 14V8m4 11V3"/></svg>
-            </div>
-            <div>
-              <h3>SoH over kilometer</h3>
-              <p>Udvikling i batteriets tilstandsgrad over tid og kørte kilometer.</p>
-            </div>
-          </div>
-          <div class="chart-toggle">
-            <span class="active"><i></i>Din bil</span>
-            <span><i class="dotted"></i>Flådegennemsnit</span>
-          </div>
-        </div>
-        <div id="sohChart" class="chart-wrap">
-          <div class="empty-state">Upload batterihistorik for at vise grafen.</div>
-        </div>
-      </section>
-
-      <section class="bottom-grid">
-        <section class="panel evidence-panel">
+      <div class="analytics-grid">
+        <section class="panel timeline-panel" id="historyPanel">
           <div class="section-heading">
-            <div class="section-title-wrap">
-              <div class="section-icon">
-                <svg viewBox="0 0 24 24"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6m-14 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
-              </div>
-              <div>
-                <h3>Seneste evidens</h3>
-                <p>Batterimålinger brugt til din historik.</p>
-              </div>
+            <div class="section-title-wrap"><span class="section-symbol">⌁</span><h3>SoH udvikling</h3></div>
+            <div class="chart-controls">
+              <span class="chart-legend"><i class="legend-dot blue"></i>Din bil (BMS)</span>
+              <span class="chart-legend"><i class="legend-dot slate"></i>Flåde (median)</span>
+              <select id="chartPeriod" aria-label="Periode"><option value="all">Alle målinger</option><option value="12m" selected>Seneste 12 mdr.</option><option value="6m">Seneste 6 mdr.</option></select>
             </div>
           </div>
-          <div id="evidenceList" class="evidence-table-wrap">
-            <div class="empty-state">Ingen records endnu.</div>
+          <div id="sohChart" class="chart-wrap"><div class="empty-state">Upload målinger for at vise SoH-kurven.</div></div>
+        </section>
+        <section class="panel benchmark-card" id="comparePanel">
+          <div class="section-heading"><div class="section-title-wrap"><span class="section-symbol">♙</span><h3>Flådesammenligning</h3></div><span class="small-arrow">›</span></div>
+          <div id="benchmarkVisualization" class="benchmark-visualization"><div class="empty-state">Indlæser sammenlignelige biler…</div></div>
+        </section>
+      </div>
+
+      <div class="dashboard-bottom">
+        <section class="panel evidence-panel" id="historyTablePanel">
+          <div class="section-heading"><div class="section-title-wrap"><span class="section-symbol">▦</span><h3>Seneste målinger</h3></div><span class="small-arrow">›</span></div>
+          <div class="evidence-table-wrap" id="evidenceList"><div class="empty-state">Ingen målinger endnu.</div></div>
+        </section>
+        <section class="panel fingerprint-panel" id="fingerprintPanel">
+          <div class="section-heading"><div class="section-title-wrap"><span class="section-symbol icy">◎</span><h3>Batteri fingeraftryk</h3></div><span class="small-arrow">›</span></div>
+          <div class="fingerprint-chart" id="fingerprintChart"><div class="empty-state">Kræver flere datapunkter.</div></div>
+          <div class="fingerprint-caption" id="fingerprintCaption">Databaserede indikatorer · ikke en diagnose</div>
+        </section>
+        <section class="panel shortcuts-panel">
+          <div class="section-heading"><div class="section-title-wrap"><span class="section-symbol">ϟ</span><h3>Hurtig handling</h3></div><span class="small-arrow">›</span></div>
+          <div class="shortcut-grid">
+            <button type="button" class="shortcut" id="quickUpload"><span>▤</span><strong>Importér data</strong><small>CSV fra Android</small></button>
+            <button type="button" class="shortcut" id="quickHistory"><span>⌁</span><strong>Se historik</strong><small>Alle målinger</small></button>
+            <button type="button" class="shortcut" id="quickCompare"><span>♙</span><strong>Sammenligning</strong><small>Med flåden</small></button>
+            <button type="button" class="shortcut" id="quickExport"><span>⇩</span><strong>Eksportér CSV</strong><small>Egne målinger</small></button>
           </div>
         </section>
-
-        <aside class="panel benchmark-card">
-          <div class="section-title-wrap">
-            <div class="section-icon">
-              <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.4"/><path d="M3 20c.6-4 2.8-6 6-6s5.4 2 6 6m0-5c3.1.1 4.8 1.7 5.4 5"/></svg>
-            </div>
-            <div>
-              <h3>Din bil mod flåden</h3>
-              <p>Sammenlign din bil med andre, når der er nok flådedata.</p>
-            </div>
-          </div>
-          <div class="benchmark-empty">
-            <div class="benchmark-glyph">
-              <svg viewBox="0 0 24 24"><path d="M5 19V12m5 7V7m5 12v-4m4 4V4"/></svg>
-            </div>
-            <strong>Afventer flådedata</strong>
-            <p>Når mindst 5 sammenlignelige biler findes, viser vi median, percentiler og placering uden at udstille andre bilers rådata.</p>
-          </div>
-        </aside>
-      </section>
+      </div>
     </section>
 
     <section id="uploadView" class="view hidden">
