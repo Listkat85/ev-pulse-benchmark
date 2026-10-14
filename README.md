@@ -1,3 +1,25 @@
+# EV Pulse Benchmark v0.9.3 · Detail Pass
+
+Denne version bygger videre på **v0.9.2** og følger brugerens godkendte `MOCKUP.png`.
+
+## Rettet i v0.9.3
+- **Ny frontbil**: 3/4-forfra-billedet er genudskåret direkte fra den godkendte mockup. Ikke længere den udvaskede, forkert maskerede bil i v0.9.2. Den er fuldt opak med en separat, diskret skygge. De øvrige lakfarver er **digitale illustrationer**, ikke verifikationsfotos.
+- **Fire rigtige SVG-ikoner** i KPI-kortene: batteri (SoH), motorvej (rækkevidde), battericeller (cellebalance), termometer (temperatur).
+- **Bilens fire specifikationsikoner** i headeren er også udskiftet med rene SVG'er, så ukendte symboler ikke vises som tomme firkanter.
+- Ny isoleret CSS-fil `dashboard-v093.css`, indlæst sidst.
+- **Eksisterende hero-billeder bagfra er bevaret byte-for-byte**, og den eksisterende API-/CSV-/SoH-logik er uændret.
+
+## Kendte afgrænsninger
+- Valg af lakfarve understøttes gennem illustrative farveversioner af mockuppets bil; de er ikke 1:1-fabriksfotos. Der mangler fortsat dokumenterede frontfotos for Standard/GT/facelift.
+- Rækkevidden udfyldes kun ved tilstrækkelige reelle data (ellers `—`).
+- Flåderangering kræver reelle, sammenlignelige data. Demonstrationsgrafen er mærket som illustration.
+- Live-Supabase og dit deployede Git/Vercel-miljø er ikke verificeret her.
+
+## Installation
+Opret en branch eller backup, pak ZIP-indholdet ud i repository-roden, behold `.git`, commit og push. Sørg for at `dashboard-v093.css` og alle `assets/vehicles/front/*` kommer med i commit.
+
+---
+
 # EV Pulse Benchmark v0.9.2 · Precision Pass
 
 Opdatering oven på **v0.9.1 Visual Polish** med brugerens `MOCKUP.png` og screenshots fra 14. oktober 2026 som visuel reference.

@@ -1,0 +1,62 @@
+/* v0.9.3 Detail Pass · pixel-level cleanup after reference screenshot review.
+   Designed to be the LAST override stylesheet. No data or Supabase changes. */
+:root{--detail-mint:#56eab2;--detail-blue:#55c1ff}
+.kpi-icon{width:25px;height:25px;flex:0 0 25px;display:inline-block;vertical-align:middle;stroke:currentColor;stroke-width:1.8;stroke-linejoin:round;stroke-linecap:round}
+.kpi-icon-battery,.kpi-icon-cells{color:var(--detail-mint)}
+.kpi-icon-road,.kpi-icon-thermo{color:var(--detail-blue)}
+.kpi-icon .icon-power-fill{fill:currentColor;stroke:none;opacity:.16}
+.kpi-icon .thermo-bulb{fill:currentColor;stroke:none}
+.kpi-icon .cell-center{opacity:.5}
+.metric-label{display:flex;align-items:center;gap:10px;font-weight:580;overflow:visible;text-overflow:clip}
+.metric-card{overflow:hidden}
+.metric-value{font-variant-numeric:tabular-nums}
+.metric-card .metric-meta{line-height:1.4}
+.spec-symbol{display:flex;align-items:center;justify-content:center}
+.spec-symbol .kpi-icon,.spec-symbol svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.spec-symbol .kpi-icon{color:#dcebf8}
+.spec-symbol .icon-power-fill{fill:currentColor;stroke:none;opacity:.14}
+/* The front car is photographic and fully opaque. It is NOT an overlay filter. */
+.front-car-stage{isolation:isolate}
+.front-car-stage img{opacity:1!important;filter:drop-shadow(0 12px 8px rgba(0,0,0,.5))!important;image-rendering:auto}
+.front-car-stage:before{left:9%;right:5%;bottom:2%;height:20%;background:rgba(0,0,0,.48);filter:blur(19px)}
+.front-car-note{z-index:2}
+/* Match the reference: status cards have crisp icons, restrained elevation and solid ink. */
+@media(min-width:801px){
+ .metric-card{background:linear-gradient(150deg,rgba(32,50,64,.92),rgba(13,29,43,.94))}
+ .metric-label{font-size:clamp(11px,.74vw,14px);gap:9px}
+ .metric-value{margin-top:9px}
+}
+@media (min-width:801px) and (max-width:1300px){
+ .kpi-icon{width:22px;height:22px;flex-basis:22px}
+ .metric-label{font-size:11px;gap:7px}
+}
+@media(max-width:800px){
+ .kpi-icon{width:22px;height:22px;flex-basis:22px}
+ .metric-label{gap:6px;white-space:normal}
+ .front-car-stage:before{bottom:4%;height:18%}
+}
+@media(max-width:390px){.metric-label{font-size:10px}.kpi-icon{width:20px;height:20px;flex-basis:20px}}
+/* Critical viewport-specific placement: the front bumper should NEVER be cut by KPI cards. */
+@media(min-width:801px) and (max-width:1300px){
+ .front-car-stage{left:-3px;top:-23px;width:376px;max-width:45%}
+}
+@media(min-width:1301px){
+ .front-car-stage{left:11px;top:-64px;width:min(27vw,470px);max-width:33%}
+}
+@media(min-width:1301px) and (max-height:760px){
+ .front-car-stage{top:-50px;width:min(26vw,440px)}
+}
+/* Every KPI row remains legible; no flex-induced collapsed meter bars. */
+@media(min-width:801px){
+ .metric-card{display:block;padding-top:12px;padding-bottom:9px}
+ .metric-value{font-size:clamp(25px,1.58vw,30px);margin:4px 0 6px;line-height:1.1}
+ .meter{width:100%;min-height:10px}
+ .metric-meta{margin-top:6px;font-size:clamp(9px,.56vw,10px)}
+ .metric-subline{font-size:clamp(9px,.56vw,10px);line-height:1.15;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+}
+@media(max-width:1300px) and (min-width:801px){
+ .metric-card{padding-top:9px;padding-bottom:7px}
+ .metric-value{font-size:25px;margin:4px 0 6px}
+ .metric-meta{margin-top:5px;font-size:9px}
+ .metric-subline{font-size:9px}
+}
