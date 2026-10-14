@@ -1,0 +1,263 @@
+/* EV Pulse Benchmark v0.9.1 · visual alignment with user-approved MOCKUP.png
+ * Non-destructive final layer: existing v0.8 flows and v0.9 hero mapping are preserved.
+ */
+:root {
+  --premium-border:rgba(143,188,223,.19);
+  --premium-ink:#edf5fc;
+  --premium-blue:#50aff7;
+  --premium-mint:#54dfab;
+}
+html,body {min-height:100%;}
+body {background:#091521; color:var(--premium-ink);}
+.app-shell{grid-template-columns:148px minmax(0,1fr)}
+.sidebar{
+  padding:15px 6px 13px;
+  background:linear-gradient(165deg,rgba(32,49,68,.97) 0%,#172839 15%,#101d2c 54%,#0d1723 100%);
+  border-right:1px solid rgba(149,178,207,.22);
+  box-shadow:inset -1px 0 0 rgba(255,255,255,.03),5px 0 34px rgba(0,0,0,.26);
+}
+.brand{padding:0 7px 22px;gap:7px}
+.brand-mark{width:31px;height:31px}
+.brand-name{font-size:17px;letter-spacing:-.037em}
+.brand-sub{font-size:10px}
+.nav{gap:5px}
+.nav-item{
+  min-height:38px; padding:8px 11px; gap:10px;
+  color:#e0eaf5; font-size:11px; font-weight:570; line-height:1.19;
+  border:1px solid transparent; border-radius:6px; transition:background .16s,border-color .16s;
+}
+.nav-item.active{color:#6ec7ff; border-color:rgba(104,180,238,.17);background:linear-gradient(104deg,rgba(69,137,197,.40),rgba(67,127,185,.25));box-shadow:inset 2px 0 0 rgba(91,183,251,.46)}
+.nav-glyph{width:20px;height:22px;color:#d2e1ed}
+.nav-glyph svg{width:19px;height:19px;stroke:currentColor;stroke-width:1.75;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.nav-item.active .nav-glyph{color:#66bbff}
+.sidebar .sync-card{padding:8px 9px}
+.sidebar .sync-title{font-size:11px}
+.sidebar .sync-vehicle{font-size:9px;color:#c0ced9}
+.sidebar .sync-meta{font-size:9px;color:#adc0cd}
+.main{
+  padding:0 13px 22px;
+  background:linear-gradient(180deg,rgba(10,24,37,.05) 0%,rgba(11,22,35,.22) 29%,#101e2c 73%,#101e2a 100%);
+}
+.topbar{
+  height:190px;padding:28px 11px 11px;
+  background:transparent;
+}
+.topbar h1{font-size:40px;letter-spacing:-.052em;font-weight:820;line-height:1.07}
+.identity-sub{font-size:20px;color:#cbd7e5;margin-top:1px}
+.identity-specs{margin-top:18px;gap:20px}
+.spec{grid-template-columns:23px auto;min-width:86px}
+.spec-symbol{color:#dbe8f3;font-size:22px}
+.spec strong{font-size:13px;color:white;font-weight:730}
+.spec small{font-size:9px;color:#cfdae5}
+.header-tools{gap:10px}
+.header-tool{font-size:19px;color:#d1e0e9}
+.connection-pill{font-size:10px;background:rgba(14,31,45,.49);border-color:rgba(163,199,223,.19)}
+.dashboard-scenery{inset:-190px -13px auto;height:400px;overflow:hidden}
+.dashboard-scenery .hero-image{
+  inset:auto 0 auto auto;top:-60px;
+  width:100%;height:auto;max-height:none;aspect-ratio:3/1;
+  object-fit:fill;object-position:right center;
+  opacity:.94;
+  mask-image:linear-gradient(180deg,#000 0%,#000 54%,rgba(0,0,0,.83) 65%,transparent 100%);
+  -webkit-mask-image:linear-gradient(180deg,#000 0%,#000 54%,rgba(0,0,0,.83) 65%,transparent 100%);
+}
+.dashboard-scenery .hero-photo-shading{
+  background:linear-gradient(90deg,rgba(8,19,30,.66) 0%,rgba(9,24,36,.17) 44%,rgba(7,18,27,.05) 100%),
+             linear-gradient(180deg,rgba(8,16,24,.03) 0%,transparent 43%,rgba(10,24,36,.43) 68%,#101e2c 100%);
+}
+/* The 3/4-front vehicle is NOT the hero. It lives in its own overlay. */
+.front-car-stage{z-index:4;top:-13px;left:-43px;width:clamp(420px,42%,470px);isolation:isolate}
+.front-car-stage:before{content:"";position:absolute;z-index:-1;left:10%;right:8%;bottom:6%;height:25%;border-radius:50%;background:rgba(0,0,0,.52);filter:blur(21px)}
+.front-car-stage img{
+  width:100%;height:auto;
+  filter:brightness(.77) contrast(1.15) saturate(.89) drop-shadow(2px 18px 14px rgba(0,0,0,.68));
+}
+.front-car-note{font-size:9px;color:#a9c3d1;margin-top:-13px;text-shadow:0 1px 5px rgba(0,0,0,.95)}
+.metrics-grid{margin:10px 0 10px 35%;gap:9px}
+.metric-card{
+  height:139px;padding:13px 12px;
+  border-radius:11px;border:1px solid var(--premium-border);
+  background:linear-gradient(145deg,rgba(26,43,59,.91),rgba(17,32,47,.88));
+  box-shadow:0 12px 30px rgba(0,0,0,.28),inset 0 1px 0 rgba(223,246,255,.05);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+}
+.metric-label{font-size:11px;color:#e1ecf5;gap:7px}
+.mini-symbol{font-size:19px;width:18px}
+.metric-value{font-size:26px;letter-spacing:-.039em;font-weight:770;margin:8px 0 10px}
+.meter{height:10px;border-radius:4px;background:rgba(92,115,139,.42)}
+.metric-meta{font-size:9px;margin-top:12px;color:#b4c7d5}
+.metric-subline{font-size:9px;color:#dfebf3;white-space:normal;line-height:1.15}
+.panel{
+  border-radius:13px;border:1px solid var(--premium-border);
+  background:linear-gradient(145deg,rgba(25,43,59,.90),rgba(13,28,43,.88) 85%);
+  box-shadow:0 12px 32px rgba(0,0,0,.17),inset 0 1px rgba(225,248,255,.045);
+  backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
+}
+.analytics-grid{gap:10px;margin-top:9px;grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.timeline-panel,.benchmark-card{height:221px;min-height:0}
+.timeline-panel{padding:66px 11px 8px}
+.benchmark-card{padding:12px 12px 9px}
+.section-heading{min-height:23px}
+.section-title-wrap h3{font-size:12px;font-weight:760}
+.section-symbol{font-size:21px;width:24px;height:24px}
+.chart-wrap{height:126px;overflow:hidden}
+.chart-wrap svg{width:100%;height:126px}
+.chart-legend{font-size:9px}
+#chartPeriod{font-size:10px;padding:5px 8px;max-width:125px}
+.benchmark-visualization{height:178px}
+/* An honest silhouette keeps the mockup's layout without inventing peer-data. */
+.benchmark-placeholder.with-silhouette{position:relative;gap:5px;isolation:isolate;min-height:160px}
+.benchmark-silhouette{position:absolute;z-index:-1;bottom:19px;left:8%;right:8%;height:78px;display:flex;align-items:flex-end;gap:4px;opacity:.26;mask-image:linear-gradient(180deg,rgba(0,0,0,.2),black)}
+.benchmark-silhouette i{flex:1;background:linear-gradient(0deg,#1a6092,#4aaaf6);border-radius:2px 2px 0 0}
+.benchmark-placeholder.with-silhouette strong{font-size:13px;background:rgba(14,29,42,.89);padding:4px 9px;border-radius:5px}
+.benchmark-placeholder.with-silhouette span{max-width:240px;background:rgba(12,26,39,.90);padding:4px 8px;border-radius:5px}
+.benchmark-placeholder.with-silhouette small{font-size:9px;color:#9dc0d5}
+.percentile-chart{padding:8px 3px 0}
+.percentile-title{font-size:10px}
+.percentile-band{height:55px;margin-top:11px;background:linear-gradient(180deg,transparent 40%,rgba(70,140,197,.10) 40%,rgba(70,155,239,.22) 95%)}
+.percentile-segment{height:63%;border-radius:6px 6px 0 0;background:linear-gradient(90deg,rgba(52,112,164,.12),rgba(70,147,215,.40),rgba(53,107,151,.12))}
+.percentile-dot{height:13px;width:13px;background:#63bfff;box-shadow:0 0 0 4px rgba(75,160,243,.15),0 0 15px rgba(75,160,243,.5)}
+.percentile-result{padding-top:9px;margin-top:9px}
+.percentile-result strong{font-size:17px}
+.dashboard-bottom{gap:10px;margin-top:10px;grid-template-columns:minmax(0,1.26fr) minmax(0,1.04fr) minmax(0,.81fr)}
+.dashboard-bottom>.panel{height:179px;padding:11px 10px 8px}
+.evidence-table-wrap{margin-top:8px;max-height:130px;scrollbar-width:thin;scrollbar-color:#48647a #172838}
+.evidence-table th,.evidence-table td{font-size:9px;padding:5px 5px}
+.evidence-table th{background:rgba(54,85,111,.38);color:#c2d5e6}
+.evidence-table tbody tr:nth-child(even){background:rgba(58,105,140,.07)}
+.fingerprint-chart{height:125px}
+.fingerprint-chart svg{width:min(100%,330px);height:125px}
+.fingerprint-caption{font-size:9px;color:#9db7c9}
+.shortcut-grid{gap:8px;margin-top:8px}
+.shortcut{min-height:57px;padding:9px 8px;grid-template-columns:28px minmax(0,1fr);grid-template-rows:15px 17px;border-radius:9px;border-color:rgba(129,168,200,.13);background:linear-gradient(145deg,rgba(42,67,87,.61),rgba(22,43,63,.82))}
+.shortcut span{font-size:24px}
+.shortcut strong{font-size:10px}
+.shortcut small{font-size:8px}
+/* Larger desktop monitors: bring content further down; avoid the unused lower third in v0.9. */
+@media(min-width:1450px){
+ .topbar{height:201px;padding-top:30px}
+ .dashboard-scenery{inset:-201px -13px auto;height:440px}
+ .dashboard-scenery .hero-image{top:-62px;width:min(100%,1750px)}
+ .front-car-stage{top:-17px;left:-37px;width:clamp(470px,28vw,530px)}
+ .metrics-grid{margin-top:10px;margin-left:35%;margin-bottom:11px}
+ .metric-card{height:157px;padding:16px 15px}
+ .metric-label{font-size:12px}.metric-value{font-size:30px;margin:10px 0 13px}
+ .metric-meta{font-size:10px;margin-top:13px}.metric-subline{font-size:10px}
+ .timeline-panel,.benchmark-card{height:243px}
+ .timeline-panel{padding-top:85px}
+ .chart-wrap,.chart-wrap svg{height:130px}
+ .benchmark-visualization{height:195px}
+ .dashboard-bottom>.panel{height:223px;padding:15px 14px}
+ .evidence-table-wrap{max-height:166px}
+ .evidence-table th,.evidence-table td{padding:8px 7px;font-size:10px}
+ .fingerprint-chart{height:166px}.fingerprint-chart svg{width:min(100%,410px);height:158px}
+ .shortcut{min-height:76px;padding:14px 12px;grid-template-rows:19px 20px;grid-template-columns:36px minmax(0,1fr)}
+ .shortcut strong{font-size:12px}.shortcut small{font-size:10px}.shortcut span{font-size:26px}
+ .section-title-wrap h3{font-size:14px}
+ .section-symbol{font-size:23px}
+ .benchmark-placeholder.with-silhouette{min-height:176px}
+}
+@media(min-width:801px) and (max-width:1140px){
+ .metric-card{padding:11px 9px}
+ .metric-label{font-size:9px}.metric-value{font-size:23px}
+ .metric-meta,.metric-subline{font-size:8px}
+ .chart-legend{display:none}
+ .front-car-stage{left:-39px;width:clamp(375px,43%,445px)}
+}
+@media(min-width:801px) and (max-width:1050px){
+ .app-shell{grid-template-columns:140px minmax(0,1fr)}
+ .metrics-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-left:36%}
+ .metric-card{height:116px}
+ .timeline-panel{padding-top:60px}
+ .front-car-stage{width:38%}
+ .analytics-grid{grid-template-columns:minmax(0,1.45fr) minmax(0,1fr)}
+}
+@media(max-width:800px){
+ .app-shell{display:block}
+ .sidebar{height:auto;position:relative;padding:10px 10px 9px}
+ .nav{display:flex;gap:5px;overflow-x:auto}
+ .nav-item{min-height:39px;white-space:nowrap;padding:8px 10px}
+ .nav-item br{display:none}
+ .main{padding:0 10px 30px}
+ .topbar{height:195px;padding:19px 8px 8px}
+ .topbar h1{font-size:33px}.identity-sub{font-size:17px}
+ .identity-specs{gap:10px;margin-top:12px}
+ .dashboard-scenery{inset:-195px -10px auto;height:360px}
+ .dashboard-scenery .hero-image{top:-12px;width:100%;height:340px;object-fit:cover;object-position:70% center;aspect-ratio:auto}
+ .front-car-stage{position:relative;left:0;top:0;margin:-30px auto -18px;width:min(90%,460px)}
+ .metrics-grid{margin:0;grid-template-columns:repeat(2,minmax(0,1fr))}
+ .metric-card{height:133px}
+ .analytics-grid{grid-template-columns:1fr}
+ .timeline-panel{padding:14px 12px 9px;height:220px}
+ .chart-wrap,.chart-wrap svg{height:171px}
+ .benchmark-card{height:215px}
+ .dashboard-bottom{grid-template-columns:1fr 1fr}
+ .dashboard-bottom>.shortcuts-panel{grid-column:span 2}
+ .dashboard-bottom>.panel{height:185px}
+ .fingerprint-chart{height:130px}.fingerprint-chart svg{height:127px}
+}
+@media(max-width:540px){
+ .topbar{height:206px}.topbar h1{font-size:30px}
+ .dashboard-scenery{top:-206px}
+ .front-car-stage{width:min(100%,430px);margin:-11px auto -20px}
+ .metrics-grid{gap:8px}.metric-card{height:139px;padding:12px 10px}
+ .metric-label{font-size:10px}.metric-value{font-size:25px}
+ .analytics-grid{gap:10px}
+ .dashboard-bottom{grid-template-columns:1fr}
+ .dashboard-bottom>.shortcuts-panel{grid-column:auto}
+ .dashboard-bottom>.panel{height:auto;min-height:190px}
+ .fingerprint-chart{height:150px}.fingerprint-chart svg{height:148px}
+ .shortcut{min-height:66px}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+/* Mockup-like histogram is explicitly for ?demo=1; live data never draws invented bars. */
+.demo-percentiles{height:100%;position:relative;display:flex;flex-direction:column;padding:2px 2px 0}
+.demo-fleet-notice{position:absolute;right:3px;top:0;color:#a9c5db;font-size:9px}
+.demo-histogram{height:79px;display:flex;align-items:flex-end;gap:3px;position:relative;border-bottom:1px solid rgba(128,187,240,.34);padding:5px 6px 0;margin-top:12px;background:repeating-linear-gradient(0deg,transparent 0 19px,rgba(140,177,208,.09) 20px,transparent 21px)}
+.demo-histogram>i{flex:1;background:linear-gradient(0deg,#155995,#348ee2);min-height:2px;border-radius:2px 2px 0 0}
+.demo-histogram-needle{position:absolute;top:3px;bottom:-3px;border-left:2px dashed #50baff;transform:translateX(-50%)}
+.demo-histogram-needle span{position:absolute;bottom:calc(100% - 6px);left:50%;transform:translateX(-50%);background:linear-gradient(#3eafff,#1986ef);color:white;border-radius:6px;padding:4px 7px;white-space:nowrap;font-size:10px;box-shadow:0 5px 15px rgba(10,20,39,.3)}
+.demo-histogram-axis{display:flex;justify-content:space-between;color:#a9c2d7;font-size:9px;margin:5px 4px 0}
+.demo-percentiles .percentile-result{margin-top:auto;min-height:62px;padding:10px;border:1px solid rgba(136,174,211,.17);border-radius:9px;background:rgba(15,30,44,.46)}
+.demo-percentiles .percentile-result strong{color:#b3ed89;font-size:18px}
+.percentile-current-label{position:absolute;bottom:calc(100% - 4px);transform:translateX(-50%);z-index:1;font-size:10px;white-space:nowrap;background:linear-gradient(180deg,#339df0,#197bd0);padding:5px 7px;border-radius:6px;color:#fff}
+@media(min-width:1450px){.demo-histogram{height:94px}.demo-percentiles .percentile-result{min-height:71px}.demo-percentiles .percentile-result strong{font-size:20px}}
+
+/* v0.9.1 screenshot review: increase vehicle presence without changing rear hero. */
+@media(min-width:801px) and (max-width:1449px){
+ .front-car-stage{width:470px;max-width:48%;left:-46px;top:-23px}
+}
+.front-car-stage img{filter:brightness(.93) contrast(1.13) saturate(.88) drop-shadow(2px 16px 18px rgba(0,0,0,.65))}
+.demo-percentiles .percentile-result strong{white-space:nowrap;font-size:14px}
+@media(min-width:1450px){.demo-percentiles .percentile-result strong{font-size:19px}}
+@media(max-width:800px){.front-car-stage{width:min(92%,480px);max-width:100%;left:0;top:0}}
+@media(max-width:540px){.front-car-note{min-height:0;font-size:8px}}
+/* Sidebar/content alignment in the approved 1120px screenshot: the dashboard panels
+ * start at x≈90, while the masthead title starts at x≈174. */
+@media(min-width:801px){
+ .app-shell{grid-template-columns:clamp(92px,6.4vw,126px) minmax(0,1fr)}
+ .main{padding-left:0;padding-right:8px}
+ .topbar{padding-left:clamp(80px,7.1vw,96px)}
+ .dashboard-scenery{left:0;right:-8px}
+ .metrics-grid{margin-left:40%}
+ .front-car-stage{left:17px;top:-13px;width:420px;max-width:39%}
+}
+@media(min-width:1450px){
+ .front-car-stage{left:15px;top:-18px;width:clamp(470px,28vw,530px);max-width:40%}
+ .metrics-grid{margin-left:40%}
+}
+@media(min-width:801px) and (max-width:1350px){
+ .sidebar{padding-left:3px;padding-right:3px}
+ .brand{padding:0 4px 21px;gap:4px}
+ .brand-mark{width:24px;height:24px;flex:none}
+ .brand-name{font-size:13px}
+ .brand-sub{font-size:9px}
+ .nav{gap:5px}
+ .nav-item{padding:7px 4px;gap:5px;font-size:9px;min-height:40px}
+ .nav-glyph{width:16px;flex:none}
+ .nav-glyph svg{width:16px;height:16px}
+ .sidebar .sync-title{font-size:9px}
+ .sidebar .sync-vehicle{font-size:8px}
+ .sidebar .sync-meta{font-size:8px}
+ .front-car-stage{width:430px;max-width:41%;left:17px;top:-14px}
+}
