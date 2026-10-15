@@ -1,20 +1,20 @@
-# EV Pulse Benchmark v0.10.0 · Skarp SoH-graf og måledækning
+# EV Pulse Benchmark v0.10.1 – Enkelt Batteri fingeraftryk
 
-Bygger videre på v0.9.9; bevarer Supabase, CSV-import, bilprofil, billeder og tidligere historik.
+Baseret på v0.10.0. **Ingen SQL-migration, ingen ændring af Supabase-tabeller og ingen ny CSV-import.** Bevarer resten af dashboardet, grafik, profiler og historik.
 
-## Ændringer
+## Hvad er ændret?
 
-- **SoH X-akse:** Vælg *Kilometer* eller *Dato* (lokal tid i Danmark), uden ændringer i måledata.
-- **Skarpt SVG:** Grafens viewBox passer til den faktisk viste bredde/højde (ingen `preserveAspectRatio="none"`), bruger læselige label-skriftstørrelser og optegnes igen ved størrelsesændring. SoH er fortsat trinvist af BMS-målinger pr. dag – ikke en interpoleret batteridegradering.
-- **Batteri fingeraftryk:** Radaren repræsenterer nu udelukkende målingernes datadækning (andel separate måledage med gyldig SoH, celleforskel og temperatur; tilstedeværelse af en godkendt 100 %-energireference; spredning på SoC-områder). Den er **ikke** en estimeret batterihelbredsscore.
-- **SoC-dækning:** Fem synlige bånd: 0–19, 20–39, 40–59, 60–79, 80–100 %. Hvert bånd viser antal **forskellige måledage**, med >=2 dage for at tælle som dækket. 100 OBD-aflæsninger fra én dag tæller kun én dag.
-- **Manglende 100 %-reference:** Grå markering + klar tekst, ikke et opdigtet kapacitetstab. `100 %` SoC i en observation er ikke nok til at være en dokumenteret energireference.
-- **Ingen demomålinger** og ingen Supabase SQL-ændringer. Intet behov for at uploade CSV igen.
+- Fjernet det forvirrende radardiagram. En kompakt oversigt viser separat **BMS-batteritilstand** (seneste faktiske BMS SoH) og **Måledækning** (antal SoC-intervaller med mindst to *forskellige måledage*).
+- Fem kompakte SoC-bånd fortæller **hvor og hvor ofte** der er målt. Bjælkelængden er relativ til området med flest målte dage og er **ikke** en sundhedsvurdering.
+- Dokumenteret `FULL_CHARGE_REFERENCE` med gyldig energi ved >=99 % SoC identificeres særskilt. Manglende reference giver beskeden **Kapacitetstest mangler**, ikke en lav helbredsscore.
+- Manglende SoH vises som `—`, og der konstrueres ingen falske batteriværdier.
+- Gensidigt uafhængige måledage i `Europe/Copenhagen`, så tætte OBD-aflæsninger ikke overdriver antallet af dage.
+- Ny versionsspecifik CSS og cache-busting JS/CSS `0101`; browserfanen viser **v0.10.1**.
 
-## Opdatering
+## Installation
 
-Udpak ZIP i roden af dit Git-repository og push. Genindlæs med Ctrl+F5. Browserfanen viser v0.10.0.
+Udpak alle filer i **roden** af dit Git-repository og push som tidligere. Genindlæs siden med Ctrl+F5, hvis browseren har cachet den gamle version.
 
-## Validering
+## Data & begrænsninger
 
-Kontrolleret statisk og med lokale browser-tests. Produktions-Supabase kræver stadig, at du tester på din egen konto.
+Kun eksisterende faktiske Supabase-målinger benyttes. En BMS SoH-værdi er ikke en uafhængig kapacitetstest; 5/5 måledækning fortæller ikke, at batteriet er 100 % sundt. Denne version ændrer kun præsentationen.

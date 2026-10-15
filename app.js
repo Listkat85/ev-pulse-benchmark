@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.10.0 · sharp SoH chart axes and measured SoC coverage");
+  console.info("EV Pulse Benchmark v0.10.1 · clear battery status and honest measurement coverage");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -611,60 +611,63 @@
 
   function renderFingerprint() {
     const box=q('fingerprintChart');
+    const caption=q('fingerprintCaption');
     if (!box) return;
     const records=currentRecords;
     if (!records.length) {
-      box.innerHTML='<div class="empty-state">Ingen målinger til at beregne datadækning.</div>';
-      q('fingerprintCaption').textContent='Datadækning kræver faktiske målinger fra Supabase.';
+      box.innerHTML='<div class="empty-state">Ingen batterimålinger endnu. Importér faktiske OBD-logs for at se tilstand og måledækning.</div>';
+      if(caption) caption.textContent='Ingen datagrundlag · ingen batteriscore.';
       return;
     }
-    // Measurement completeness is NOT a battery condition score. Each count
-    // is based on different calendar days, so dense OBD polling on a single
-    // drive cannot create artificial confidence in the evidence.
+    // Two separate concepts: BMS-reported SoH is a vehicle measurement;
+    // SoC coverage is only the breadth of our evidence, NOT battery health.
+    // Count separate Copenhagen calendar days to avoid duplicate OBD polls
+    // making measurement coverage appear more complete than it is.
     const bins=Array.from({length:5},()=>new Set());
-    const allDays=new Set(), sohDays=new Set(), cellDays=new Set(), tempDays=new Set();
-    const validSoc=v=>v!==null && v>=0 && v<=100;
-    const validTemp=v=>v!==null && v>=-45 && v<=100;
-    for(const rec of records){
+    const allDays=new Set();
+    const ranges=['0–19 %','20–39 %','40–59 %','60–79 %','80–100 %'];
+    for(const rec of records) {
       const day=measurementDayKey(rec.recorded_at);
       if(!day) continue;
       allDays.add(day);
       const soc=num(rec.soc_display_percent);
-      if(validSoc(soc)) bins[Math.min(4,Math.floor(soc/20))].add(day);
-      if(num(rec.soh_percent)!==null && num(rec.soh_percent)>0 && num(rec.soh_percent)<=100) sohDays.add(day);
-      if(num(rec.cell_delta_mv)!==null && num(rec.cell_delta_mv)>=0 && num(rec.cell_delta_mv)<=5000) cellDays.add(day);
-      const avg=num(rec.battery_temp_avg_c), low=num(rec.battery_temp_min_c), high=num(rec.battery_temp_max_c);
-      if(validTemp(avg)||(validTemp(low)&&validTemp(high)&&low<=high))tempDays.add(day);
+      if(soc!==null && soc>=0 && soc<=100) {
+        bins[Math.min(4,Math.floor(soc/20))].add(day);
+      }
     }
+    const soh=latestValid('soh_percent');
+    const validSoh=soh!==null && soh>0 && soh<=100;
+    const sufficientlyCovered=bins.filter(b=>b.size>=2).length;
+    const maxDays=Math.max(2,...bins.map(b=>b.size));
     const fullReference=records.some(rec=>
       rec.record_type==='FULL_CHARGE_REFERENCE' &&
       num(rec.remaining_energy_kwh)!==null && num(rec.remaining_energy_kwh)>0 &&
       num(rec.soc_display_percent)!==null && num(rec.soc_display_percent)>=99
     );
-    const days=Math.max(1,allDays.size);
-    // Five evidence-coverage dimensions: presence of actual readings, not
-    // whether reported cell voltage or temperatures are objectively 'healthy'.
-    const adequatelyCovered=bins.filter(b=>b.size>=2).length;
-    const values=[sohDays.size/days,cellDays.size/days,tempDays.size/days,fullReference?1:null,adequatelyCovered/5];
-    const names=['SoH-data','Celledata','Temp.data','Energi-ref.','SoC-dækning'];
-    const cx=163,cy=67,r=43;
-    const point=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/5;return [cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v]};
-    const poly=v=>Array.from({length:5},(_,i)=>point(i,v).map(n=>n.toFixed(2)).join(',')).join(' ');
-    // Missing references are shown as a separate gray hollow marker, not as
-    // evidence of poor battery health. The polygon represents DATA completeness.
-    const shape=values.map((v,i)=>point(i,v??0).map(n=>n.toFixed(2)).join(',')).join(' ');
-    const axes=names.map((_,i)=>{const [x,y]=point(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#80a4c5" stroke-opacity=".30"/>`}).join('');
-    const labels=names.map((name,i)=>{const [x,y]=point(i,1.44);return `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="10.3" fill="#cedfe9" text-anchor="middle">${name}</text>`}).join('');
-    const vertices=values.map((v,i)=>{const [x,y]=point(i,v??0);return v===null?`<circle cx="${x}" cy="${y}" r="4" fill="none" stroke="#91a7b7" stroke-dasharray="2 2" stroke-width="1.6"><title>Fuldladningsreference mangler</title></circle>`:`<circle cx="${x}" cy="${y}" r="2.8" fill="#6fc4f6"><title>${names[i]}: ${Math.round(v*100)} % af datagrundlaget</title></circle>`}).join('');
-    const radar=`<svg viewBox="0 0 326 132" role="img" aria-label="Dækning af faktiske SoH-, celle- og temperaturmålinger samt fuldladningsreference og SoC-områder"><polygon points="${poly(.33)}" stroke="#6889a6" stroke-opacity=".23" fill="none"/><polygon points="${poly(.66)}" stroke="#6889a6" stroke-opacity=".30" fill="none"/><polygon points="${poly(1)}" stroke="#6889a6" stroke-opacity=".45" fill="none"/>${axes}<polygon points="${shape}" fill="#2274ce" fill-opacity=".22" stroke="#57b5ef" stroke-width="1.8"/>${vertices}${labels}</svg>`;
-    const socRanges=['0–19 %','20–39 %','40–59 %','60–79 %','80–100 %'];
-    const segments=bins.map((set,i)=>{
-      const n=set.size,cls=n>=2?'adequate':n===1?'limited':'absent';
-      const explanation=n===0?'Ingen måledage':n===1?'Kun én måledag':`${n} forskellige måledage`;
-      return `<div class="soc-band ${cls}" title="${socRanges[i]} SoC: ${explanation}"><span>${socRanges[i]}</span><i aria-hidden="true"></i><small>${n} ${n===1?'dag':'dage'}</small></div>`;
+    const bands=bins.map((days,i)=>{
+      const count=days.size;
+      const cls=count>=2?'adequate':count===1?'limited':'absent';
+      const width=Math.round(100*count/maxDays);
+      const detail=count===0?'ingen måledage':`${count} ${count===1?'måledag':'måledage'}`;
+      return `<div class="fp-coverage-band ${cls}" title="${ranges[i]} SoC: ${detail}">
+        <div class="fp-coverage-track"><span style="width:${width}%"></span></div>
+        <span class="fp-band-range">${ranges[i]}</span>
+        <span class="fp-band-days">${count} ${count===1?'dag':'dage'}</span>
+      </div>`;
     }).join('');
-    box.innerHTML=`<div class="fingerprint-radar">${radar}</div><div class="soc-coverage" role="group" aria-label="Måledækning ved fem batteriniveauer">${segments}</div>`;
-    q('fingerprintCaption').textContent=`Måledækning: ${adequatelyCovered}/5 SoC-områder (min. 2 måledage). ${fullReference?'100 %-energireference fundet.':'100 %-energireference mangler.'} Ikke batteriets helbredsscore.`;
+    const status=fullReference
+      ? `<div class="fp-reference is-available"><span class="fp-reference-icon" aria-hidden="true">✓</span><div><strong>Energireference registreret</strong><span>100 %-reference findes i dine data. Det er ikke i sig selv en uafhængig kapacitetstest.</span></div></div>`
+      : `<div class="fp-reference is-missing"><span class="fp-reference-icon" aria-hidden="true">ⓘ</span><div><strong>Kapacitetstest mangler</strong><span>Ingen dokumenteret 100 %-energireference. Den faktiske brugbare kapacitet kan endnu ikke beregnes sikkert.</span></div></div>`;
+    box.innerHTML=`<div class="fp-summary" aria-label="Batteritilstand og datadækning">
+      <div class="fp-stat"><span class="fp-stat-label">BMS-batteritilstand</span><strong class="fp-stat-value">${validSoh?`${fmt(soh,1)} %`:'—'}</strong><span class="fp-stat-help">${validSoh?'Rapporteret af bilen':'Ingen gyldig SoH-måling'}</span></div>
+      <div class="fp-stat"><span class="fp-stat-label">Måledækning</span><strong class="fp-stat-value">${sufficientlyCovered} <small>af 5</small></strong><span class="fp-stat-help">SoC-områder med mindst 2 måledage</span></div>
+    </div>
+    <div class="fp-coverage" aria-label="Registrerede måledage fordelt på ladeniveau">
+      <div class="fp-coverage-heading"><strong>Målinger fordelt på batteriniveau</strong><span>${allDays.size} ${allDays.size===1?'måledag':'måledage'}</span></div>
+      <div class="fp-coverage-bands">${bands}</div>
+    </div>
+    ${status}`;
+    if(caption) caption.textContent='Måledækning viser, hvor bilen er målt – ikke hvor sundt batteriet er.';
   }
 
   function recordLabel(type) {

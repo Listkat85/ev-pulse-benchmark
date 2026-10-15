@@ -1,0 +1,78 @@
+/* EV Pulse Benchmark v0.10.1 — fingerprint clarity. No radar or invented condition scores. */
+.dashboard-bottom > .fingerprint-panel {
+  min-height: 286px;
+  height: auto;
+  max-height: none;
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
+}
+.fingerprint-panel .section-heading { flex: 0 0 auto; }
+.fp-heading-tag {
+  font-size: 10px; font-weight: 600; color: #b6c9d9;
+  background: rgba(144,178,204,.09);
+  border: 1px solid rgba(149,188,215,.18);
+  padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+}
+/* Override old fixed-height, radar-oriented styles from previous dashboard versions. */
+#fingerprintChart {
+  display: flex; flex-direction: column; justify-content: flex-start;
+  align-items: stretch; width: 100%; min-width: 0;
+  flex: 1 1 auto; min-height: 0; height: auto;
+  gap: 12px; margin-top: 12px; overflow: visible;
+}
+.fp-summary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px; width: 100%; }
+.fp-stat {
+  border: 1px solid rgba(123,165,196,.16);
+  background: linear-gradient(142deg, rgba(39,65,86,.82), rgba(25,48,68,.87));
+  border-radius: 9px; padding: 12px 13px 10px;
+  min-width: 0; min-height: 94px;
+  display: flex; flex-direction: column; align-items: flex-start;
+}
+.fp-stat-label {color: #bad0e1; font-size: 11px; line-height: 1.3; font-weight: 600; }
+.fp-stat-value {font-size: clamp(20px,1.65vw,28px); line-height: 1.23; letter-spacing: -.6px; color: #e9f7ff; margin-top: 4px; font-weight: 800;}
+.fp-stat-value small {font-size: .63em; font-weight: 650; color: #bdd3e1; letter-spacing: 0;}
+.fp-stat-help {font-size: 10px; line-height: 1.35; color: #a2bbcd; margin-top: 3px;}
+.fp-coverage {display: flex; flex-direction: column; gap: 9px; min-width: 0;}
+.fp-coverage-heading {display: flex; align-items: baseline; justify-content: space-between; gap: 7px; min-width: 0;}
+.fp-coverage-heading strong {font-size: 11px; font-weight: 650; color: #e0f0fa; line-height: 1.35;}
+.fp-coverage-heading > span {font-size: 10px; color: #9cbed4; white-space: nowrap;}
+.fp-coverage-bands {display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 5px; min-width: 0;}
+.fp-coverage-band {display: flex; flex-direction: column; text-align: center; align-items: stretch; gap: 4px; min-width: 0;}
+.fp-coverage-track {background: #2e475b; height: 7px; border-radius: 99px; overflow: hidden; border: 1px solid rgba(116,150,178,.15);}
+.fp-coverage-track > span {display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg,#3492c5,#52d0b3);}
+.fp-coverage-band.limited .fp-coverage-track > span {background:#dba856;}
+.fp-coverage-band.absent .fp-coverage-track > span {display:none;}
+.fp-band-range {font-size: clamp(8px,.59vw,10px); line-height: 1.2; color: #c3d8e5; white-space: nowrap;}
+.fp-band-days {font-size: clamp(8px,.58vw,10px); line-height: 1.25; color: #8fb3ca; white-space: nowrap;}
+.fp-reference {display:flex;align-items:flex-start; gap:9px; border-top:1px solid rgba(125,162,190,.15); padding-top:10px;min-width:0;}
+.fp-reference-icon {display:grid;place-items:center;flex:0 0 20px;height:20px;line-height:1;border-radius:50%;font-size:15px;color:#edbb6a;background:rgba(230,170,73,.1);}
+.fp-reference.is-available .fp-reference-icon {color:#65d5b7;background:rgba(67,195,151,.12);}
+.fp-reference > div {display:flex; flex-direction:column;gap:3px;min-width:0;}
+.fp-reference strong {font-size: 11px; line-height:1.3;color:#e9bc75;}
+.fp-reference.is-available strong {color:#88deca;}
+.fp-reference div span {font-size:10px;line-height:1.45;color:#aabfd1;}
+#fingerprintCaption {
+  font-size:9px; line-height:1.35; color:#8eacc0; text-align:left;
+  padding:0 1px; margin:9px 0 0; width:100%;
+  flex:0 0 auto;
+}
+@media(max-width:1250px) {
+ .dashboard-bottom > .fingerprint-panel {min-height:280px;}
+ .fp-stat {padding:10px; min-height:92px;}
+ .fp-stat-label {font-size:10px;}
+}
+@media(max-width:800px) {
+ .dashboard-bottom > .fingerprint-panel {min-height:0;}
+ .fp-stat-value {font-size:24px;}
+ .fp-band-range,.fp-band-days {font-size:9px;}
+ .fp-coverage-heading strong {font-size:11px;}
+}
+@media(max-width:440px) {
+ .fp-heading-tag {font-size:9px;padding:3px 6px;}
+ .fp-stat {padding:10px 8px;}
+ .fp-stat-help {font-size:9px;}
+ .fp-coverage-heading strong {font-size:10px;}
+ .fp-coverage-heading > span {font-size:9px;}
+ .fp-band-range,.fp-band-days {font-size:8px;}
+}
