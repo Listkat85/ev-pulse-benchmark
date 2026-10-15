@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.8 · reliable model-year / generation image switch / Supabase only");
+  console.info("EV Pulse Benchmark v0.9.9 · distinct measurement days and honest BMS SoH trend");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -158,7 +158,7 @@
     if (!v) return "—";
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return "—";
-    return d.toLocaleString("da-DK", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit" });
+    return d.toLocaleString("da-DK", { day:"2-digit", month:"2-digit", year:"2-digit", hour:"2-digit", minute:"2-digit", timeZone:"Europe/Copenhagen" });
   };
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const setMessage = (el, text, type = "") => {
@@ -481,46 +481,80 @@
     const threshold=maxTime - (period==="6m"?183:365)*86400000;
     return currentRecords.filter(r=>new Date(r.recorded_at).getTime()>=threshold);
   }
+  // Group repeated high-frequency OBD measurements by calendar day in Denmark.
+  // A BMS SoH reading is a discrete ECU estimate, not a new laboratory capacity
+  // measurement each time the OBD dongle polls it. Keep the *last* reading on
+  // each measurement day, and plot updates as steps instead of a fictitious slope.
+  function measurementDayKey(recordedAt) {
+    const d = new Date(recordedAt);
+    if (Number.isNaN(d.getTime())) return null;
+    const parts = new Intl.DateTimeFormat('en-GB', {
+      timeZone:'Europe/Copenhagen', year:'numeric', month:'2-digit', day:'2-digit'
+    }).formatToParts(d);
+    const p=Object.fromEntries(parts.filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+    return `${p.year}-${p.month}-${p.day}`;
+  }
+  function lastPerMeasurementDay(records, validate = () => true) {
+    const daily = new Map();
+    [...records].sort((a,b)=>new Date(a.recorded_at)-new Date(b.recorded_at)).forEach(r=>{
+      const key=measurementDayKey(r.recorded_at);
+      if(key && validate(r))daily.set(key,r);
+    });
+    return [...daily.values()];
+  }
   function renderSohChart() {
-    const chart = q("sohChart");
-    const keyed = new Map();
-    chartRecordsForPeriod()
-      .filter(r => num(r.soh_percent) !== null && num(r.soh_percent) > 0 && num(r.odometer_km) !== null)
-      .forEach(r => keyed.set(`${r.odometer_km}|${r.soh_percent}`,
-        {x:Number(r.odometer_km),y:Number(r.soh_percent),date:r.recorded_at}));
-    const pts = [...keyed.values()].sort((a,b)=>a.x-b.x);
-    if (!pts.length) { chart.innerHTML='<div class="empty-state">Ingen SoH-data for den valgte periode.</div>';return; }
-
-    // Auto-zoom to the ACTUAL car mileage. A car with data at ~70,000 km
-    // must not show its entire history compressed into one dot at the far right.
-    const w=940,h=205,L=50,R=19,T=19,B=32;
+    const chart=q('sohChart');
+    const source=chartRecordsForPeriod().filter(r=>
+      num(r.soh_percent)!==null && num(r.soh_percent)>0 && num(r.odometer_km)!==null
+    );
+    const daily=lastPerMeasurementDay(source);
+    // The actual 24-hour samples remain stored in Supabase; this is only an
+    // overview of independent measurement days and BMS-reported change points.
+    const pts=daily.map(r=>({x:Number(r.odometer_km),y:Number(r.soh_percent),date:r.recorded_at}))
+      .sort((a,b)=>a.x-b.x || new Date(a.date)-new Date(b.date));
+    if (!pts.length) {
+      chart.innerHTML='<div class="empty-state">Ingen SoH-målinger for den valgte periode.</div>';
+      return;
+    }
+    const w=940,h=205,L=51,R=20,T=20,B=35;
     const xlo=Math.min(...pts.map(p=>p.x)),xhi=Math.max(...pts.map(p=>p.x));
     const xSpan=xhi-xlo;
-    const xPad=Math.max(1200,xSpan*.11);
-    const step= xSpan>50000?10000:xSpan>10000?5000:xSpan>3000?1000:500;
+    const xPad=Math.max(500,xSpan*.06);
+    const step=xSpan>50000?10000:xSpan>10000?5000:xSpan>3000?1000:500;
     const minX=Math.max(0,Math.floor((xlo-xPad)/step)*step);
-    const maxX=Math.max(minX+step*4,Math.ceil((xhi+xPad)/step)*step);
-    const lowSoH=Math.min(...pts.map(p=>p.y)),highSoH=Math.max(...pts.map(p=>p.y));
-    const minY=Math.min(95,Math.max(75,Math.floor(lowSoH-2)));
-    const maxY=Math.min(105,Math.max(100,Math.ceil(highSoH+1)));
+    const maxX=Math.max(minX+step*2,Math.ceil((xhi+xPad)/step)*step);
+    const minSoH=Math.min(...pts.map(p=>p.y)),maxSoH=Math.max(...pts.map(p=>p.y));
+    let minY=Math.max(0,Math.floor(minSoH-1));
+    let maxY=Math.min(105,Math.ceil(maxSoH+1));
+    if(maxY-minY<3){const center=(maxY+minY)/2;minY=Math.max(0,Math.floor(center-1.5));maxY=Math.min(105,minY+3)}
     const sx=x=>L+(x-minX)/(maxX-minX)*(w-L-R);
     const sy=y=>T+(maxY-y)/(maxY-minY)*(h-T-B);
     let grids='',labels='';
-    for(let i=0;i<=4;i++) {
-      const y=minY+(maxY-minY)*i/4, yy=sy(y);
-      grids+=`<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#a9c6de" opacity=".16"/>`;
-      labels+=`<text x="${L-13}" y="${yy+4}" text-anchor="end" font-size="11" fill="#c6d7e5">${fmt(y,0)} %</text>`;
+    const ticks=5;
+    for(let i=0;i<=ticks;i++){
+      const y=minY+(maxY-minY)*i/ticks,yy=sy(y);
+      grids+=`<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#9abbd6" opacity=".16"/>`;
+      labels+=`<text x="${L-12}" y="${yy+4}" text-anchor="end" font-size="11" fill="#c6d7e5">${Number.isInteger(y)?fmt(y,0):fmt(y,1)} %</text>`;
     }
-    for(let i=0;i<=5;i++) {
+    for(let i=0;i<=5;i++){
       const x=minX+(maxX-minX)*i/5,xx=sx(x);
-      grids+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${h-B}" stroke="#a9c6de" opacity=".12"/>`;
-      labels+=`<text x="${xx}" y="${h-9}" text-anchor="middle" font-size="11" fill="#b8cbdc">${Math.round(x).toLocaleString("da-DK")}</text>`;
+      grids+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${h-B}" stroke="#9abbd6" opacity=".10"/>`;
+      labels+=`<text x="${xx}" y="${h-9}" text-anchor="middle" font-size="11" fill="#b8cbdc">${Math.round(x).toLocaleString('da-DK')}</text>`;
     }
-    const line=pts.map((p,i)=>`${i?'L':'M'}${sx(p.x).toFixed(1)},${sy(p.y).toFixed(1)}`).join(' ');
-    const marks=pts.map(p=>`<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="3.6" fill="#54b9ff" stroke="#0b1b2b" stroke-width="2"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString('da-DK')} km · ${dateFmt(p.date)}</title></circle>`).join('');
-    // A single fleet median is *not* a historical fleet trend. Do not fabricate one.
-    const single=pts.length===1?`<text x="${Math.min(w-135,sx(pts[0].x)+14)}" y="${Math.max(22,sy(pts[0].y)-13)}" fill="#b8dcf6" font-size="11">Én måling · afventer udvikling</text>`:'';
-    chart.innerHTML=`<svg role="img" aria-label="SoH-udvikling: ${pts.length} registrerede målinger fra ${minX.toLocaleString('da-DK')} til ${maxX.toLocaleString('da-DK')} km" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none">${grids}${labels}<path d="${line}" fill="none" stroke="#47b3ff" stroke-width="2.6" stroke-dasharray="4 4" stroke-linejoin="round" stroke-linecap="round"/>${marks}${single}</svg>`;
+    let path=`M${sx(pts[0].x).toFixed(1)},${sy(pts[0].y).toFixed(1)}`;
+    for(let i=1;i<pts.length;i++){
+      // Hold den målte BMS-værdi konstant indtil næste dokumenterede måledag.
+      const p=pts[i];
+      path+=` H${sx(p.x).toFixed(1)} V${sy(p.y).toFixed(1)}`;
+    }
+    const base=sy(minY);
+    const area=`${path} L${sx(pts.at(-1).x).toFixed(1)},${base.toFixed(1)} L${sx(pts[0].x).toFixed(1)},${base.toFixed(1)} Z`;
+    // Each real BMS change gets one distinct visible marker. No invented data.
+    const important=pts.filter((p,i)=>i===0||i===pts.length-1||Math.abs(p.y-pts[i-1].y)>.05);
+    const markers=important.map(p=>`<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="4.6" fill="#58bfff" stroke="#0b2133" stroke-width="2"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString('da-DK')} km · ${dateFmt(p.date)}</title></circle>`).join('');
+    const levels=new Set(pts.map(p=>p.y.toFixed(2))).size;
+    const note=`${pts.length} måledage · ${levels} BMS-niveauer · trinvise ændringer`;
+    chart.innerHTML=`<div class="soh-chart-note" aria-label="Grafens datagrundlag">${esc(note)}</div><svg role="img" aria-label="BMS SoH vist trinvist fra ${minX.toLocaleString('da-DK')} til ${maxX.toLocaleString('da-DK')} km, baseret på ${pts.length} måledage" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="sohFill099" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2c9ff0" stop-opacity=".24"/><stop offset="100%" stop-color="#2c9ff0" stop-opacity="0"/></linearGradient></defs>${grids}${labels}<path d="${area}" fill="url(#sohFill099)"/><path d="${path}" fill="none" stroke="#4abaff" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round"/>${markers}</svg>`;
   }
 
   function renderBenchmark() {
@@ -591,11 +625,21 @@
   }
 
   function renderEvidenceList() {
-    const box=q("evidenceList"),rows=[...currentRecords].reverse().slice(0,6);
+    const box=q('evidenceList');
+    const all=currentRecords.filter(r=>measurementDayKey(r.recorded_at));
+    // Six different measurement days, not six OBD polls from the same drive.
+    // Choose the latest actual database row per day. No values are averaged,
+    // interpolated or changed, and the full imported history remains intact.
+    const days=lastPerMeasurementDay(all).reverse();
+    const rows=days.slice(0,6);
     if(!rows.length){box.innerHTML='<div class="empty-state">Ingen målinger endnu.</div>';return}
+    const dayCounts=new Map();
+    all.forEach(r=>{const day=measurementDayKey(r.recorded_at);dayCounts.set(day,(dayCounts.get(day)||0)+1)});
     box.innerHTML=`<table class="evidence-table"><thead><tr><th>Dato</th><th>Kilometer</th><th>SoC</th><th>Temperatur</th><th>Cellebalance</th><th>Kilde</th></tr></thead><tbody>${rows.map(r=>{
       const t=num(r.battery_temp_avg_c) ?? ((num(r.battery_temp_min_c)!==null&&num(r.battery_temp_max_c)!==null)?(num(r.battery_temp_min_c)+num(r.battery_temp_max_c))/2:null);
-      return `<tr><td>${esc(dateFmt(r.recorded_at).split(",")[0])}</td><td>${num(r.odometer_km)!==null?Math.round(r.odometer_km).toLocaleString("da-DK"):"—"}</td><td>${fmt(r.soc_display_percent,0)} %</td><td>${fmt(t,0)} °C</td><td>${fmt(r.cell_delta_mv,0)} mV</td><td>${esc(r.source_app_version?.includes("csv")?"CSV":r.source_app_version?.includes("obd")?"OBD":"Ukendt")}</td></tr>`}).join("")}</tbody></table>`;
+      const count=dayCounts.get(measurementDayKey(r.recorded_at))||1;
+      return `<tr title="Seneste registrering ${esc(dateFmt(r.recorded_at))} · ${count} målinger denne dag"><td>${esc(dateFmt(r.recorded_at).split(',')[0])}</td><td>${num(r.odometer_km)!==null?Math.round(r.odometer_km).toLocaleString('da-DK'):'—'}</td><td>${fmt(r.soc_display_percent,0)} %</td><td>${t===null?'—':`${fmt(t,0)} °C`}</td><td>${num(r.cell_delta_mv)===null?'—':`${fmt(r.cell_delta_mv,0)} mV`}</td><td>${esc(r.source_app_version?.includes('csv')?'CSV':r.source_app_version?.includes('obd')?'OBD':'Ukendt')}</td></tr>`;
+    }).join('')}</tbody></table><div class="measurement-day-info">Nyeste måling pr. dag · ${days.length} måledage · ${all.length} registreringer i Supabase</div>`;
   }
 
   async function createVehicleFromForm(form) {

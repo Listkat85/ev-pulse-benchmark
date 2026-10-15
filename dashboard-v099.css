@@ -1,0 +1,7 @@
+/* v0.9.9 · Supabase-only, clarity for densely sampled BMS logs */
+#sohChart { display:flex; flex-direction:column; align-items:stretch; position:relative; }
+#sohChart .soh-chart-note { order:2; flex:0 0 auto; text-align:right; padding:1px 6px 0; font-size:clamp(8px,.60vw,11px); line-height:1.2; letter-spacing:.01em; color:#8cacc2; opacity:.95; pointer-events:none; }
+#sohChart svg { order:1; display:block; width:100%; height:auto; min-height:0; flex:1 1 auto; }
+#evidenceList .measurement-day-info { color:#8aa9be; font-size:clamp(8px,.61vw,10px); padding:7px 8px 4px; letter-spacing:.01em; border-top:1px solid rgba(125,183,217,.09); white-space:normal; }
+#evidenceList .evidence-table { margin-bottom:0; }
+@media(max-width:650px){#sohChart .soh-chart-note{font-size:8px;text-align:center;}}
