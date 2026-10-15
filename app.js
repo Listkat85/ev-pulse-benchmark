@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.2 · precision");
+  console.info("EV Pulse Benchmark v0.9.5 · Supabase only");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -7,7 +7,6 @@
   let currentRecords = [];
   let parsedRows = [];
   let currentBenchmark = null;
-  const demoMode = new URLSearchParams(location.search).has("demo");
 
   // One canonical map. Every file lives at the same path in the ZIP and in GitHub.
   const HERO_ROOT = "./assets/heroes/";
@@ -300,12 +299,18 @@
     setHeroAsset(trim, paint.code);
     const front = q("frontVehicleImage");
     if (front) {
-      const newUrl = `./assets/vehicles/front/ev6-front-${paint.code.toLowerCase()}.png`;
+      front.classList.toggle("hidden", !currentVehicle);
+      front.dataset.paint = paint.code;
+      // Use the existing, higher-resolution EV6 front photograph for grey/white.
+      // Other color illustrations stay available until model-specific photos exist.
+      const newUrl = ["KLM","SWP"].includes(paint.code)
+        ? "./assets/vehicles/front/ev6-front-photo.png"
+        : `./assets/vehicles/front/ev6-front-${paint.code.toLowerCase()}.png`;
       const probe = new Image();
       const token = String(Date.now())+":"+String(Math.random());
       front.dataset.token = token;
       probe.onload = () => { if(front.dataset.token===token){front.src=newUrl; q("frontVehicleNote").textContent = trim!=="GT-Line" ? "Frontbilen er en GT-Line-illustration" : paint.code!=="KLM" ? "Illustreret lakfarve – kan afvige fra virkeligheden" : "";} };
-      probe.onerror = () => { if(front.dataset.token===token){front.src="./assets/vehicles/front/ev6-front-moonscape.png"; q("frontVehicleNote").textContent="Frontbil er en grå GT-Line-reference; valgte model/farve fremgår af profilen.";} };
+      probe.onerror = () => { if(front.dataset.token===token){front.src="./assets/vehicles/front/ev6-front-photo.png"; q("frontVehicleNote").textContent="Frontbil er en grå GT-Line-reference; valgte model/farve fremgår af profilen.";} };
       probe.src = newUrl;
     }
     refreshVehiclePreview();
@@ -348,8 +353,9 @@
     if (!currentVehicle) {
       setup.classList.remove("hidden");
       q("vehicleLine").textContent = "Ingen bilprofil endnu";
-      q("vehicleChip").textContent = "Kia EV6";
+      q("vehicleChip").textContent = "Min bil";
       q("heroModelDescription").textContent = "Tilføj din bil ›";
+      for (const key of ["specBattery","specDrive","specYear","specColor"]) q(key).textContent = "—";
       q("vehicleEditForm").innerHTML = '<div class="empty-state">Opret først bilprofilen øverst.</div>';
       applyVehicleVisual();
       syncVehicleFactoryProfile(q("vehicleForm"));
@@ -391,7 +397,7 @@
     const latestRecord = records.at(-1);
     q("metricSoh").textContent = latestSoh===null?"—":fmt(latestSoh,1)+" %";
     q("heroSoh").textContent = latestSoh===null?"—":fmt(latestSoh,1);
-    q("metricSohMeta").textContent = latestSoh===null?"Ingen SoH-målinger":"Seneste BMS-registrering";
+    q("metricSohMeta").textContent = latestSoh===null?"Ingen SoH-målinger":"BMS SoH · kilde: Supabase";
     const capacity = num(currentVehicle?.battery_nominal_kwh);
     q("metricCapacityEstimate").textContent = latestSoh===null || capacity===null ? "Estimeret kapacitet: —" : `Nominel × SoH ≈ ${fmt(capacity*latestSoh/100,1)} kWh`;
     q("sohMeter").style.width = latestSoh===null?"0%":`${Math.max(0,Math.min(100,latestSoh))}%`;
@@ -408,7 +414,6 @@
     q("metricTempContext").textContent = temps&&num(temps.battery_temp_min_c)!==null?`${fmt(temps.battery_temp_min_c,0)}° min. · ${fmt(temps.battery_temp_max_c,0)}° maks.`:"Batteritemperatur";
     q("tempMeter").style.width = Number.isFinite(temp)?`${Math.max(0,Math.min(100,(temp+20)*1.35))}%`:"0%";
     q("heroInsight").textContent = records.length ? `${records.length} målinger · senest ${dateFmt(latestRecord?.recorded_at)}` : "Upload batterihistorik for at bygge tidslinjen.";
-    if (records.length && !demoMode) q("sideMeta").textContent = `Seneste data\n${dateFmt(latestRecord?.recorded_at)}`;
     renderSohChart(); renderEvidenceList(); renderFingerprint(); renderBenchmark();
   }
 
@@ -468,23 +473,8 @@
       box.innerHTML='<div class="benchmark-placeholder"><strong>Ingen SoH-målinger endnu</strong><span>Importér batterihistorik for at starte sammenligningen.</span></div>';
       return;
     }
-    if(demoMode && data?.demo) {
-      // Visually illustrate the approved mockup without implying real peer data.
-      const bars=[2,3,5,7,11,15,20,29,39,50,61,70,79,88,100,84,70,56,41,29,19,12,8,5,3];
-      box.innerHTML=`<div class="demo-percentiles">
-        <span class="demo-fleet-notice">DEMO · simuleret fordeling</span>
-        <div class="demo-histogram" role="img" aria-label="Illustrativt histogram, ikke indsamlede flådedata">
-          ${bars.map((h,i)=>`<i style="height:${h}%;${i===16?'background:#58c2ff;':''}"></i>`).join("")}
-          <div class="demo-histogram-needle" style="left:72%"><span>Din bil 97,5 %</span></div>
-        </div>
-        <div class="demo-histogram-axis"><span>85 %</span><span>90 %</span><span>95 %</span><span>100 %</span><span>105 %</span></div>
-        <div class="percentile-result"><div><small>Placering · eksempel</small><strong>Bedre end 72 %</strong></div><div><small>Sammenligningsgrundlag · demo</small><b>EV6 Long Range RWD</b><small>2021–2024 · 77,4 kWh</small></div></div>
-      </div>`;
-      return;
-    }
     if(!data || Number(data.sample_size)<5 || num(data.percentile)===null) {
-      const silhouettes=[8,13,19,30,43,57,73,86,100,89,72,58,39,23,13];
-      box.innerHTML=`<div class="benchmark-placeholder with-silhouette"><div class="benchmark-silhouette" aria-hidden="true">${silhouettes.map(h=>`<i style="height:${h}%"></i>`).join("")}</div><strong>Afventer flådedata</strong><span>Mindst 5 sammenlignelige biler kræves, før vi viser en placering.</span><small>Illustration · ingen flådestatistik</small></div>`;
+      box.innerHTML='<div class="benchmark-placeholder"><strong>Afventer flådedata</strong><span>Mindst 5 sammenlignelige biler med faktiske målinger fra Supabase kræves, før vi viser en placering.</span></div>';
       return;
     }
     const p=Math.max(0,Math.min(100,num(data.percentile))), median=num(data.median_soh),low=num(data.p25_soh),high=num(data.p75_soh);
@@ -582,7 +572,7 @@
     };
     const {data,error}=await sb.from("vehicles").update(payload).eq("id",currentVehicle.id).select("*").single();
     if(error)throw error;
-    currentVehicle=data;renderVehicleState();
+    currentVehicle=data;renderVehicleState();renderDashboard();await loadBenchmark();
   }
 
   function renderPreview() {
@@ -640,7 +630,6 @@
 
     q("vehicleForm").addEventListener("submit",async e=>{
       e.preventDefault();setMessage(q("vehicleFormMessage"),"Gemmer…");
-      if (demoMode) {setMessage(q("vehicleFormMessage"),"Demo viser kun et eksempel – ingen ændringer gemmes.","error");return}
       try{await createVehicleFromForm(e.currentTarget);setMessage(q("vehicleFormMessage"),"Bilprofil gemt.","success")}
       catch(err){setMessage(q("vehicleFormMessage"),err.message||String(err),"error")}
     });
@@ -651,7 +640,6 @@
     });
     q("vehicleEditForm").addEventListener("submit",async e=>{
       e.preventDefault();setMessage(q("vehicleEditMessage"),"Gemmer…");
-      if(demoMode){setMessage(q("vehicleEditMessage"),"Demo viser kun et eksempel – ingen ændringer gemmes.","error");return}
       try{await updateVehicleFromForm(e.currentTarget);setMessage(q("vehicleEditMessage"),"Ændringer gemt.","success")}
       catch(err){setMessage(q("vehicleEditMessage"),err.message||String(err),"error")}
     });
@@ -682,24 +670,25 @@
 
   async function init() {
     bindUi();
-    if (demoMode) {
-      document.body.classList.add("demo-mode");
-      currentVehicle={id:"demo",manufacturer:"Kia",model:"EV6",model_year:2023,variant:"RWD",trim_level:"GT-Line",battery_nominal_kwh:77.4,exterior_color_code:"KLM",platform:"E-GMP"};
-      // Demo values are intentionally simulated. No DB writes and no personal measurements.
-      currentRecords=Array.from({length:26},(_,i)=>({recorded_at:new Date(2026,0,5+i*10).toISOString(),odometer_km:3800+i*4800,record_type:i===2||i===16?"FULL_CHARGE_REFERENCE":"OBSERVATION",soh_percent:99.4 - i*0.076 +(i%6===0 ? 0.05 : 0),soc_display_percent:40+(i*11)%55,remaining_energy_kwh:i===2?70.5:i===16?68.8:null,cell_delta_mv:75+i*2,battery_temp_avg_c:18+4*Math.sin(i/3),battery_temp_min_c:15,battery_temp_max_c:23,source_app_version:"demo"}));
-      currentBenchmark={demo:true,sample_size:143,median_soh:96.3,p25_soh:94.4,p75_soh:98.0,percentile:72};
-      renderVehicleState();renderDashboard();q("sideMeta").textContent="DEMO · simulerede data (ikke dine målinger)";setOnline(true,"DEMO · simulerede data");
-      return;
-    }
     try{
       if(!cfg?.SUPABASE_URL||!cfg?.SUPABASE_PUBLISHABLE_KEY)throw new Error("Supabase config mangler.");
       sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
       sessionUser=await ensureAnonymousSession();
-      q("sideMeta").textContent="Anonym session · "+sessionUser.id.slice(0,8);
-      setOnline(true,"Forbundet");
+      setOnline(false,"Indlæser fra Supabase…");
+      q("sideMeta").textContent="Indlæser kun databaseposter…";
       await loadVehicle();await loadRecords();
+      setOnline(true,"Forbundet");
+      q("sideMeta").textContent=currentRecords.length
+        ? `Supabase · ${currentRecords.length.toLocaleString("da-DK")} registreringer\nSenest ${dateFmt(currentRecords.at(-1)?.recorded_at)}`
+        : "Supabase · Ingen målinger for denne bil";
     }catch(err){
-      console.error(err);setOnline(false,"Forbindelsesfejl");q("sideMeta").textContent=err.message||String(err);q("heroInsight").textContent="Kunne ikke forbinde til Supabase.";
+      console.error(err);
+      // Never leave previously loaded or local/example values on screen after a read failure.
+      currentVehicle=null;currentRecords=[];currentBenchmark=null;
+      renderVehicleState();renderDashboard();
+      setOnline(false,"Forbindelsesfejl");
+      q("sideMeta").textContent="Supabase kunne ikke indlæses: "+(err.message||String(err));
+      q("heroInsight").textContent="Ingen data vist: Supabase-forbindelsen fejlede.";
     }
   }
 

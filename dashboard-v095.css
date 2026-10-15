@@ -1,0 +1,44 @@
+/* EV Pulse Benchmark v0.9.5: live-data-only front car + mockup-fit repairs.
+   No fake values or histogram; the 3/4-rear hero remains untouched. */
+/* Use the existing HIGH-resolution frontal vehicle asset. Present it as a
+   real opaque photograph, instead of enlarging the old 422px mockup crop. */
+.front-car-stage { isolation: isolate; overflow: visible; pointer-events: none; }
+.front-car-stage img {
+  display:block; width:100%; height:auto; opacity:1!important;
+  object-fit:contain; image-rendering:auto;
+  filter: brightness(.94) contrast(1.06) saturate(.87)
+          drop-shadow(0 16px 12px rgba(0,0,0,.57))!important;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 89%, rgba(0,0,0,.95) 94%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, #000 89%, rgba(0,0,0,.95) 94%, transparent 100%);
+}
+.front-car-stage img[data-paint="SWP"] { filter:brightness(1.07) contrast(1.05) saturate(.80) drop-shadow(0 16px 12px rgba(0,0,0,.58))!important; }
+.front-car-stage img[data-paint="ABP"] { filter:brightness(.85) contrast(1.13) saturate(.82) drop-shadow(0 16px 12px rgba(0,0,0,.65))!important; }
+.front-car-stage::before {
+  content:"";position:absolute;left:10%;right:7%;bottom:0;height:19%;z-index:-1;
+  background:radial-gradient(ellipse 65% 34% at 50% 75%,rgba(0,0,0,.76),transparent 90%);
+  filter:blur(10px);pointer-events:none;
+}
+/* The car's bottom may flow into the analytics panel, not through metric text. */
+@media(min-width:801px) {
+  /* Let the vehicle project the same few pixels across the sidebar seam as in
+     the approved mockup; pointer-events remain disabled on the image layer. */
+  .main {overflow:visible;position:relative;z-index:9;}
+}
+@media(min-width:801px) and (max-width:1300px) {
+  .front-car-stage { width:407px;max-width:45%;left:-44px;top:-34px;z-index:6; }
+  .metrics-grid { z-index:5; }
+}
+@media(min-width:1301px) {
+  .front-car-stage {width:clamp(500px,29vw,575px);max-width:38%;left:13px;top:-59px;z-index:6;}
+}
+@media(max-width:800px){
+  .front-car-stage {left:0;max-width:100%;margin-top:0;}
+  .front-car-stage img {filter:brightness(.94) contrast(1.07) saturate(.90) drop-shadow(0 12px 9px rgba(0,0,0,.58))!important;}
+  .front-car-stage img[data-paint="SWP"] {filter:brightness(1.05) contrast(1.04) saturate(.82) drop-shadow(0 12px 9px rgba(0,0,0,.58))!important;}
+}
+/* Keep cell-balance's true multicolor visual scale (not a diagnostic cutoff). */
+.metric-card .meter.cell-meter{background:linear-gradient(90deg,#20b960 0%,#54d566 19%,#a3dd4d 39%,#f4d94f 55%,#f1a94e 73%,#e54853 100%)!important}
+/* Real-data empty states, without misleading grey histogram silhouettes. */
+.benchmark-placeholder { text-align:center;align-items:center;justify-content:center;gap:8px; }
+.benchmark-placeholder:not(.with-silhouette)::after {content:""}
+.hidden {display:none!important}
