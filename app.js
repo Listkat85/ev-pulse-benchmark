@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.6 · transparent asset / verified Supabase only");
+  console.info("EV Pulse Benchmark v0.9.7 · generation-specific EV6 front assets / Supabase only");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -22,6 +22,14 @@
     "GT-Line": {folder:"gt-line", stem:"hero_gtline_", label:"GT-Line"},
     "GT Performance": {folder:"gt-performance", stem:"hero_gtperformance_", label:"GT (Performance)"}
   };
+  // Approved transparent PNG images. No screenshots, clipping or CSS recoloring.
+  const EV6_FRONT_IMAGES = Object.freeze({
+    original: "./assets/vehicles/front/ev6-original-front.png",
+    facelift: "./assets/vehicles/front/ev6-facelift-front.png"
+  });
+  function frontImageFor(vehicle) {
+    return EV6_FRONT_IMAGES[inferBatteryProfile(vehicle).generation];
+  }
   // Verified factory nominal *gross* kWh, kept distinct from measured usable energy.
   // The 2025 registration year alone cannot identify facelift: user chooses generation.
   const EV6_BATTERY_PROFILES = Object.freeze({
@@ -314,14 +322,17 @@
     const paint = paintByCode(currentVehicle?.exterior_color_code || "KLM");
     q("heroVersionBadge").textContent = displayTrim(trim);
     setHeroAsset(trim, paint.code);
-    // One REAL RGBA transparent PNG. No alpha-mask fading, crops, screenshot
-    // patches or color-filter tricks. The full silhouette is preserved.
+    // The transparent front image is independent of the scenic rear-view hero.
+    // Use the resolved vehicle generation (NOT registration year alone).
     const front = q("frontVehicleImage");
     if (front) {
+      const frontGeneration = currentVehicle ? inferBatteryProfile(currentVehicle).generation : "original";
+      const frontSource = currentVehicle ? frontImageFor(currentVehicle) : EV6_FRONT_IMAGES.original;
+      if (front.getAttribute("src") !== frontSource) front.setAttribute("src",frontSource);
       front.classList.toggle("hidden", !currentVehicle);
-      front.src = "./assets/vehicles/front/ev6-front-transparent.png";
-      front.dataset.paint = paint.code;
-      front.alt = "Kia EV6 set skråt forfra · transparent mørkegrå fotoreference";
+      front.dataset.generation = frontGeneration;
+      front.parentElement.dataset.generation = frontGeneration;
+      front.alt = `Kia EV6 ${frontGeneration === "facelift" ? "facelift (2025+)" : "oprindelig generation (2021–2024)"} set skråt forfra`;
       const note = q("frontVehicleNote");
       if (note) note.textContent = "";
     }
@@ -355,7 +366,7 @@
       <div class="vehicle-form-section"><div class="eyebrow">KARROSSERI</div><h3>Original Kia-farve</h3>
         <input type="hidden" name="exterior_color_code" value="${esc(paint.code)}">
         <div class="vehicle-color-row"><div id="vehiclePaintSwatches" class="paint-swatches"></div><span id="vehiclePaintName" class="paint-name">${esc(paint.name)}</span></div>
-        <p class="vehicle-settings-hint">Hero-billedet bagfra følger den valgte farve. Frontbilen er en separat, transparent mørkegrå fotoreference, indtil verificerede fritlagte fotos findes for alle lakfarver.</p>
+        <p class="vehicle-settings-hint">Hero-billedet bagfra følger den valgte farve. Den fritlagte frontbil skifter mellem oprindelig EV6 og facelift efter bilens generation; begge frontbilleder er mørkegrå referenceillustrationer og skifter endnu ikke lakfarve.</p>
       </div>
       <div class="vehicle-save-row"><button class="primary-btn" type="submit">Gem bilprofil</button><span>Fabriksbatteri: <strong data-factory-capacity></strong> · Gemmes i din eksisterende Supabase-profil.</span></div>`;
   }

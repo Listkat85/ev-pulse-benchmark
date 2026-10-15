@@ -1,0 +1,25 @@
+/* v0.9.7 – position original and facelift transparent assets independently.
+   Both car PNGs keep their full silhouette and alpha channel intact. */
+@media (min-width:1301px) {
+  .front-car-stage[data-generation="original"] {
+    top: -87px;
+    width: clamp(380px, 25vw, 490px);
+    max-width: 38%;
+  }
+}
+@media (min-width:801px) and (max-width:1300px) {
+  .front-car-stage[data-generation="original"] {
+    top: -63px;
+    width: min(350px, 35.5%);
+    max-width: 37%;
+  }
+}
+/* On mobile the car remains in normal flow, so neither silhouette can
+   overlap the summary or push the page sideways. */
+@media (max-width:800px) {
+  .front-car-stage[data-generation="original"] {
+    top: 0;
+    width: min(100%, 430px);
+    max-width: 100%;
+  }
+}
