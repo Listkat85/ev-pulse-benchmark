@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080B0F">
-  <title>EV Pulse Benchmark · v0.9.9</title>
+  <title>EV Pulse Benchmark · v0.10.0</title>
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="./dashboard-v09.css">
   <link rel="stylesheet" href="./dashboard-v091.css">
@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./dashboard-v097.css">
 <link rel="stylesheet" href="./dashboard-v098.css?v=098">
 <link rel="stylesheet" href="./dashboard-v099.css?v=099">
+<link rel="stylesheet" href="./dashboard-v010.css?v=0100">
 </head>
 <body>
 <div class="app-shell">
@@ -171,6 +172,10 @@
             <div class="chart-controls">
               <span class="chart-legend"><i class="legend-dot blue"></i>Din bil (BMS)</span>
               <span class="chart-legend"><i class="legend-dot slate"></i>Flåde (median)</span>
+              <div class="axis-switch" role="group" aria-label="Vandret akse for SoH-grafen">
+                <label for="chartXAxis" class="screen-reader-only">X-akse</label>
+                <select id="chartXAxis" aria-label="Vis SoH efter kilometer eller dato"><option value="km" selected>Kilometer</option><option value="date">Dato</option></select>
+              </div>
               <select id="chartPeriod" aria-label="Periode"><option value="all">Alle målinger</option><option value="12m" selected>Seneste 12 mdr.</option><option value="6m">Seneste 6 mdr.</option></select>
             </div>
           </div>
@@ -263,6 +268,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=099"></script>
+<script src="./app.js?v=0100"></script>
 </body>
 </html>

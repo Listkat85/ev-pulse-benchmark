@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.9 · distinct measurement days and honest BMS SoH trend");
+  console.info("EV Pulse Benchmark v0.10.0 · sharp SoH chart axes and measured SoC coverage");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -504,57 +504,69 @@
   }
   function renderSohChart() {
     const chart=q('sohChart');
+    if (!chart) return;
+    const axis=q('chartXAxis')?.value === 'date' ? 'date' : 'km';
+    // One verified BMS value from each local calendar day, not every OBD poll.
     const source=chartRecordsForPeriod().filter(r=>
-      num(r.soh_percent)!==null && num(r.soh_percent)>0 && num(r.odometer_km)!==null
+      num(r.soh_percent)!==null && num(r.soh_percent)>0 &&
+      num(r.odometer_km)!==null && Number.isFinite(new Date(r.recorded_at).getTime())
     );
     const daily=lastPerMeasurementDay(source);
-    // The actual 24-hour samples remain stored in Supabase; this is only an
-    // overview of independent measurement days and BMS-reported change points.
-    const pts=daily.map(r=>({x:Number(r.odometer_km),y:Number(r.soh_percent),date:r.recorded_at}))
-      .sort((a,b)=>a.x-b.x || new Date(a.date)-new Date(b.date));
+    const pts=daily.map(r=>({km:Number(r.odometer_km),time:new Date(r.recorded_at).getTime(),y:Number(r.soh_percent)}))
+      .sort((a,b)=>axis==='date'?a.time-b.time:a.km-b.km||a.time-b.time);
     if (!pts.length) {
       chart.innerHTML='<div class="empty-state">Ingen SoH-målinger for den valgte periode.</div>';
       return;
     }
-    const w=940,h=205,L=51,R=20,T=20,B=35;
-    const xlo=Math.min(...pts.map(p=>p.x)),xhi=Math.max(...pts.map(p=>p.x));
-    const xSpan=xhi-xlo;
-    const xPad=Math.max(500,xSpan*.06);
-    const step=xSpan>50000?10000:xSpan>10000?5000:xSpan>3000?1000:500;
-    const minX=Math.max(0,Math.floor((xlo-xPad)/step)*step);
-    const maxX=Math.max(minX+step*2,Math.ceil((xhi+xPad)/step)*step);
+    // SVG coordinate units match displayed CSS pixels. The old 940x205 SVG
+    // was stretched into a ~130px-high box with preserveAspectRatio="none",
+    // squashing glyphs and making the graph blurry on high-resolution screens.
+    const bounds=chart.getBoundingClientRect();
+    const w=Math.max(320,Math.round(bounds.width||chart.clientWidth||700));
+    const h=Math.max(116,Math.round((bounds.height||150)-18));
+    const L=axis==='date'?57:55, R=18, T=13, B=30;
+    const xOf=p=>axis==='date'?p.time:p.km;
+    const xlo=Math.min(...pts.map(xOf)),xhi=Math.max(...pts.map(xOf));
+    const span=xhi-xlo;
+    const pad=axis==='date'?Math.max(86400000,span*.035):Math.max(250,span*.045);
+    const minX=axis==='date'?xlo-pad:Math.max(0,xlo-pad);
+    const maxX=Math.max(minX+(axis==='date'?86400000:500),xhi+pad);
     const minSoH=Math.min(...pts.map(p=>p.y)),maxSoH=Math.max(...pts.map(p=>p.y));
     let minY=Math.max(0,Math.floor(minSoH-1));
     let maxY=Math.min(105,Math.ceil(maxSoH+1));
-    if(maxY-minY<3){const center=(maxY+minY)/2;minY=Math.max(0,Math.floor(center-1.5));maxY=Math.min(105,minY+3)}
+    if(maxY-minY<3){minY=Math.max(0,Math.floor((maxY+minY)/2-1.5));maxY=Math.min(105,minY+3)}
     const sx=x=>L+(x-minX)/(maxX-minX)*(w-L-R);
     const sy=y=>T+(maxY-y)/(maxY-minY)*(h-T-B);
+    const shortDate=ms=>new Intl.DateTimeFormat('da-DK',{timeZone:'Europe/Copenhagen',day:'numeric',month:'short'}).format(new Date(ms));
+    const minLocalYear=new Intl.DateTimeFormat('da-DK',{timeZone:'Europe/Copenhagen',year:'numeric'}).format(new Date(xlo));
+    const maxLocalYear=new Intl.DateTimeFormat('da-DK',{timeZone:'Europe/Copenhagen',year:'numeric'}).format(new Date(xhi));
+    const dateTick=ms=>shortDate(ms)+(minLocalYear!==maxLocalYear?' '+new Intl.DateTimeFormat('da-DK',{timeZone:'Europe/Copenhagen',year:'numeric'}).format(new Date(ms)):'');
+    const xTick=axis==='date'?dateTick:(x=>Math.round(x).toLocaleString('da-DK'));
+    const xTicks=w<500?3:w<730?4:5;
+    const yTicks=4;
     let grids='',labels='';
-    const ticks=5;
-    for(let i=0;i<=ticks;i++){
-      const y=minY+(maxY-minY)*i/ticks,yy=sy(y);
-      grids+=`<line x1="${L}" x2="${w-R}" y1="${yy}" y2="${yy}" stroke="#9abbd6" opacity=".16"/>`;
-      labels+=`<text x="${L-12}" y="${yy+4}" text-anchor="end" font-size="11" fill="#c6d7e5">${Number.isInteger(y)?fmt(y,0):fmt(y,1)} %</text>`;
+    for(let i=0;i<=yTicks;i++){
+      const y=minY+(maxY-minY)*i/yTicks,yy=sy(y);
+      grids+=`<line x1="${L}" x2="${w-R}" y1="${yy.toFixed(2)}" y2="${yy.toFixed(2)}" stroke="#9abbd6" stroke-opacity=".17" stroke-width=".75" vector-effect="non-scaling-stroke"/>`;
+      labels+=`<text x="${L-10}" y="${(yy+3.5).toFixed(2)}" text-anchor="end" font-size="11.5" fill="#d3e3ef">${Number.isInteger(y)?fmt(y,0):fmt(y,1)} %</text>`;
     }
-    for(let i=0;i<=5;i++){
-      const x=minX+(maxX-minX)*i/5,xx=sx(x);
-      grids+=`<line x1="${xx}" x2="${xx}" y1="${T}" y2="${h-B}" stroke="#9abbd6" opacity=".10"/>`;
-      labels+=`<text x="${xx}" y="${h-9}" text-anchor="middle" font-size="11" fill="#b8cbdc">${Math.round(x).toLocaleString('da-DK')}</text>`;
+    for(let i=0;i<=xTicks;i++){
+      const x=minX+(maxX-minX)*i/xTicks,xx=sx(x);
+      grids+=`<line x1="${xx.toFixed(2)}" x2="${xx.toFixed(2)}" y1="${T}" y2="${h-B}" stroke="#9abbd6" stroke-opacity=".10" stroke-width=".75" vector-effect="non-scaling-stroke"/>`;
+      labels+=`<text x="${xx.toFixed(2)}" y="${h-8}" text-anchor="${i===0?'start':i===xTicks?'end':'middle'}" font-size="11.5" fill="#c3d7e6">${esc(xTick(x))}</text>`;
     }
-    let path=`M${sx(pts[0].x).toFixed(1)},${sy(pts[0].y).toFixed(1)}`;
+    let path=`M${sx(xOf(pts[0])).toFixed(2)},${sy(pts[0].y).toFixed(2)}`;
     for(let i=1;i<pts.length;i++){
-      // Hold den målte BMS-værdi konstant indtil næste dokumenterede måledag.
       const p=pts[i];
-      path+=` H${sx(p.x).toFixed(1)} V${sy(p.y).toFixed(1)}`;
+      path+=` H${sx(xOf(p)).toFixed(2)} V${sy(p.y).toFixed(2)}`;
     }
     const base=sy(minY);
-    const area=`${path} L${sx(pts.at(-1).x).toFixed(1)},${base.toFixed(1)} L${sx(pts[0].x).toFixed(1)},${base.toFixed(1)} Z`;
-    // Each real BMS change gets one distinct visible marker. No invented data.
+    const area=`${path} L${sx(xOf(pts.at(-1))).toFixed(2)},${base.toFixed(2)} L${sx(xOf(pts[0])).toFixed(2)},${base.toFixed(2)} Z`;
     const important=pts.filter((p,i)=>i===0||i===pts.length-1||Math.abs(p.y-pts[i-1].y)>.05);
-    const markers=important.map(p=>`<circle cx="${sx(p.x).toFixed(1)}" cy="${sy(p.y).toFixed(1)}" r="4.6" fill="#58bfff" stroke="#0b2133" stroke-width="2"><title>${fmt(p.y,1)} % · ${Math.round(p.x).toLocaleString('da-DK')} km · ${dateFmt(p.date)}</title></circle>`).join('');
+    const markers=important.map(p=>`<circle cx="${sx(xOf(p)).toFixed(2)}" cy="${sy(p.y).toFixed(2)}" r="3.2" fill="#75c7fa" stroke="#0b2133" stroke-width="1.5" vector-effect="non-scaling-stroke"><title>${fmt(p.y,1)} % · ${p.km.toLocaleString('da-DK')} km · ${dateFmt(new Date(p.time).toISOString())}</title></circle>`).join('');
     const levels=new Set(pts.map(p=>p.y.toFixed(2))).size;
-    const note=`${pts.length} måledage · ${levels} BMS-niveauer · trinvise ændringer`;
-    chart.innerHTML=`<div class="soh-chart-note" aria-label="Grafens datagrundlag">${esc(note)}</div><svg role="img" aria-label="BMS SoH vist trinvist fra ${minX.toLocaleString('da-DK')} til ${maxX.toLocaleString('da-DK')} km, baseret på ${pts.length} måledage" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none"><defs><linearGradient id="sohFill099" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2c9ff0" stop-opacity=".24"/><stop offset="100%" stop-color="#2c9ff0" stop-opacity="0"/></linearGradient></defs>${grids}${labels}<path d="${area}" fill="url(#sohFill099)"/><path d="${path}" fill="none" stroke="#4abaff" stroke-width="2.7" stroke-linejoin="round" stroke-linecap="round"/>${markers}</svg>`;
+    const note=`${pts.length} måledage · ${levels} BMS-niveauer · ${axis==='date'?'datoakse':'kilometerakse'}`;
+    chart.innerHTML=`<svg role="img" aria-label="BMS SoH vist trinvist efter ${axis==='date'?'dato':'kilometerstand'} på ${pts.length} måledage" viewBox="0 0 ${w} ${h}" preserveAspectRatio="xMidYMid meet"><defs><linearGradient id="sohFill010" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#2c9ff0" stop-opacity=".20"/><stop offset="100%" stop-color="#2c9ff0" stop-opacity="0"/></linearGradient></defs>${grids}${labels}<path d="${area}" fill="url(#sohFill010)"/><path d="${path}" fill="none" stroke="#59b9fa" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${markers}</svg><div class="soh-chart-note" aria-label="Grafens datagrundlag">${esc(note)}</div>`;
   }
 
   function renderBenchmark() {
@@ -598,26 +610,61 @@
   }
 
   function renderFingerprint() {
-    const box=q("fingerprintChart"),records=currentRecords,soh=latestValid("soh_percent");
-    if(soh===null || records.length<2) {box.innerHTML='<div class="empty-state">Mindst 2 målinger og BMS SoH kræves.</div>';return;}
-    const last=[...records].reverse();
-    const delta=last.find(r=>num(r.cell_delta_mv)!==null)?.cell_delta_mv;
-    const t=last.find(r=>num(r.battery_temp_avg_c)!==null)?.battery_temp_avg_c;
-    const energy=last.find(r=>r.record_type==="FULL_CHARGE_REFERENCE" && num(r.remaining_energy_kwh)>0)?.remaining_energy_kwh;
-    const cap=currentVehicle?resolveFactoryBattery({...inferBatteryProfile(currentVehicle),trim:currentVehicle.trim_level}):null;
-    // These are *visual indices*, not a health score, and are NOT peer-based.
-    const values=[Math.max(.1,Math.min(1,soh/100)), delta==null?null:Math.max(.15,Math.min(1,1-Number(delta)/400)),
-      t==null?null:Math.max(.1,Math.min(1,1-Math.abs(Number(t)-22)/45)),
-      energy==null||!cap?null:Math.max(.1,Math.min(1,Number(energy)/cap)), Math.min(1,records.length/15)];
-    const names=["SoH","Cellebalance","Temperatur","Energiref.","Dækning"];
-    const cx=150,cy=65,r=47;
+    const box=q('fingerprintChart');
+    if (!box) return;
+    const records=currentRecords;
+    if (!records.length) {
+      box.innerHTML='<div class="empty-state">Ingen målinger til at beregne datadækning.</div>';
+      q('fingerprintCaption').textContent='Datadækning kræver faktiske målinger fra Supabase.';
+      return;
+    }
+    // Measurement completeness is NOT a battery condition score. Each count
+    // is based on different calendar days, so dense OBD polling on a single
+    // drive cannot create artificial confidence in the evidence.
+    const bins=Array.from({length:5},()=>new Set());
+    const allDays=new Set(), sohDays=new Set(), cellDays=new Set(), tempDays=new Set();
+    const validSoc=v=>v!==null && v>=0 && v<=100;
+    const validTemp=v=>v!==null && v>=-45 && v<=100;
+    for(const rec of records){
+      const day=measurementDayKey(rec.recorded_at);
+      if(!day) continue;
+      allDays.add(day);
+      const soc=num(rec.soc_display_percent);
+      if(validSoc(soc)) bins[Math.min(4,Math.floor(soc/20))].add(day);
+      if(num(rec.soh_percent)!==null && num(rec.soh_percent)>0 && num(rec.soh_percent)<=100) sohDays.add(day);
+      if(num(rec.cell_delta_mv)!==null && num(rec.cell_delta_mv)>=0 && num(rec.cell_delta_mv)<=5000) cellDays.add(day);
+      const avg=num(rec.battery_temp_avg_c), low=num(rec.battery_temp_min_c), high=num(rec.battery_temp_max_c);
+      if(validTemp(avg)||(validTemp(low)&&validTemp(high)&&low<=high))tempDays.add(day);
+    }
+    const fullReference=records.some(rec=>
+      rec.record_type==='FULL_CHARGE_REFERENCE' &&
+      num(rec.remaining_energy_kwh)!==null && num(rec.remaining_energy_kwh)>0 &&
+      num(rec.soc_display_percent)!==null && num(rec.soc_display_percent)>=99
+    );
+    const days=Math.max(1,allDays.size);
+    // Five evidence-coverage dimensions: presence of actual readings, not
+    // whether reported cell voltage or temperatures are objectively 'healthy'.
+    const adequatelyCovered=bins.filter(b=>b.size>=2).length;
+    const values=[sohDays.size/days,cellDays.size/days,tempDays.size/days,fullReference?1:null,adequatelyCovered/5];
+    const names=['SoH-data','Celledata','Temp.data','Energi-ref.','SoC-dækning'];
+    const cx=163,cy=67,r=43;
     const point=(i,v)=>{const a=-Math.PI/2+i*2*Math.PI/5;return [cx+Math.cos(a)*r*v,cy+Math.sin(a)*r*v]};
-    const poly=(v)=>Array.from({length:5},(_,i)=>point(i,v).map(n=>n.toFixed(2)).join(",")).join(" ");
-    const shape=values.map((v,i)=>point(i,v??.07).map(n=>n.toFixed(2)).join(",")).join(" ");
-    const axes=names.map((_,i)=>{const p=point(i,1);return `<line x1="${cx}" y1="${cy}" x2="${p[0]}" y2="${p[1]}" stroke="#80a4c5" opacity=".28"/>`}).join("");
-    const labels=names.map((name,i)=>{const [x,y]=point(i,1.3);return `<text x="${x}" y="${y+3}" font-size="9" fill="#c0d2e1" text-anchor="middle">${name}</text>`}).join("");
-    box.innerHTML=`<svg viewBox="0 0 300 130" role="img" aria-label="Dækning og måleindikatorer for batteriet"><polygon points="${poly(.33)}" stroke="#6889a6" stroke-opacity=".24" fill="none"/><polygon points="${poly(.66)}" stroke="#6889a6" stroke-opacity=".33" fill="none"/><polygon points="${poly(1)}" stroke="#6889a6" stroke-opacity=".44" fill="none"/>${axes}<polygon points="${shape}" fill="#2274ce" fill-opacity=".28" stroke="#4baaff" stroke-width="2"/>${values.map((v,i)=>{const [x,y]=point(i,v??.07);return `<circle cx="${x}" cy="${y}" r="2.7" fill="${v===null?"#738a9a":"#59bfff"}"/>`}).join("")}${labels}</svg>`;
-    q("fingerprintCaption").textContent="Visuelt dataindeks (grå = mangler) · ikke diagnose eller flådebenchmark";
+    const poly=v=>Array.from({length:5},(_,i)=>point(i,v).map(n=>n.toFixed(2)).join(',')).join(' ');
+    // Missing references are shown as a separate gray hollow marker, not as
+    // evidence of poor battery health. The polygon represents DATA completeness.
+    const shape=values.map((v,i)=>point(i,v??0).map(n=>n.toFixed(2)).join(',')).join(' ');
+    const axes=names.map((_,i)=>{const [x,y]=point(i,1);return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="#80a4c5" stroke-opacity=".30"/>`}).join('');
+    const labels=names.map((name,i)=>{const [x,y]=point(i,1.44);return `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" font-size="10.3" fill="#cedfe9" text-anchor="middle">${name}</text>`}).join('');
+    const vertices=values.map((v,i)=>{const [x,y]=point(i,v??0);return v===null?`<circle cx="${x}" cy="${y}" r="4" fill="none" stroke="#91a7b7" stroke-dasharray="2 2" stroke-width="1.6"><title>Fuldladningsreference mangler</title></circle>`:`<circle cx="${x}" cy="${y}" r="2.8" fill="#6fc4f6"><title>${names[i]}: ${Math.round(v*100)} % af datagrundlaget</title></circle>`}).join('');
+    const radar=`<svg viewBox="0 0 326 132" role="img" aria-label="Dækning af faktiske SoH-, celle- og temperaturmålinger samt fuldladningsreference og SoC-områder"><polygon points="${poly(.33)}" stroke="#6889a6" stroke-opacity=".23" fill="none"/><polygon points="${poly(.66)}" stroke="#6889a6" stroke-opacity=".30" fill="none"/><polygon points="${poly(1)}" stroke="#6889a6" stroke-opacity=".45" fill="none"/>${axes}<polygon points="${shape}" fill="#2274ce" fill-opacity=".22" stroke="#57b5ef" stroke-width="1.8"/>${vertices}${labels}</svg>`;
+    const socRanges=['0–19 %','20–39 %','40–59 %','60–79 %','80–100 %'];
+    const segments=bins.map((set,i)=>{
+      const n=set.size,cls=n>=2?'adequate':n===1?'limited':'absent';
+      const explanation=n===0?'Ingen måledage':n===1?'Kun én måledag':`${n} forskellige måledage`;
+      return `<div class="soc-band ${cls}" title="${socRanges[i]} SoC: ${explanation}"><span>${socRanges[i]}</span><i aria-hidden="true"></i><small>${n} ${n===1?'dag':'dage'}</small></div>`;
+    }).join('');
+    box.innerHTML=`<div class="fingerprint-radar">${radar}</div><div class="soc-coverage" role="group" aria-label="Måledækning ved fem batteriniveauer">${segments}</div>`;
+    q('fingerprintCaption').textContent=`Måledækning: ${adequatelyCovered}/5 SoC-områder (min. 2 måledage). ${fullReference?'100 %-energireference fundet.':'100 %-energireference mangler.'} Ikke batteriets helbredsscore.`;
   }
 
   function recordLabel(type) {
@@ -722,6 +769,7 @@
     ["overview","upload","vehicle"].forEach(v=>q(v+"View").classList.toggle("hidden",v!==actual));
     document.querySelectorAll(".nav-item").forEach(btn=>btn.classList.toggle("active",btn.dataset.view===name));
     if(targets[name]) requestAnimationFrame(()=>q(targets[name])?.scrollIntoView({behavior:"smooth",block:"center"}));
+    if(actual==='overview')requestAnimationFrame(renderSohChart);
     window.scrollTo({top:0,behavior:name==="overview"?"smooth":"instant"});
   }
   function exportOwnCsv() {
@@ -742,6 +790,17 @@
     q("quickCompare")?.addEventListener("click",()=>switchView("compare"));
     q("quickExport")?.addEventListener("click",exportOwnCsv);
     q("chartPeriod")?.addEventListener("change",renderSohChart);
+    q("chartXAxis")?.addEventListener("change",renderSohChart);
+    // Recalculate SVG at its real display size; never distort the viewBox.
+    let lastChartWidth=0;
+    if (typeof ResizeObserver !== 'undefined') {
+      new ResizeObserver(entries=>{
+        const width=Math.round(entries[0]?.contentRect?.width||0);
+        if(width>0 && width!==lastChartWidth){lastChartWidth=width;renderSohChart()}
+      }).observe(q('sohChart'));
+    } else {
+      window.addEventListener('resize',renderSohChart,{passive:true});
+    }
     q("editVehicleFromHero").addEventListener("click",()=>switchView("vehicle"));
 
     q("vehicleForm").addEventListener("submit",async e=>{
