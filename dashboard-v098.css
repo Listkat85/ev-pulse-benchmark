@@ -1,0 +1,27 @@
+/* v0.9.8: image preview reflects model-year / generation selection in Min bil.
+   No changes to rear hero or persisted Supabase measurement rendering. */
+.vehicle-front-preview {
+  margin-top:16px;
+  padding:13px 14px 11px;
+  background:rgba(6,18,31,.48);
+  border:1px solid rgba(99,165,202,.22);
+  border-radius:14px;
+  min-width:0;
+}
+.vehicle-front-preview-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.vehicle-front-preview-heading span{font-size:10px;letter-spacing:.075em;color:#88b8ce}
+.vehicle-front-preview-heading strong{font-size:12px;color:#edf6ff}
+.vehicle-front-preview img{
+  display:block;
+  width:min(100%,440px);
+  height:auto;
+  max-height:240px;
+  object-fit:contain;
+  margin:8px auto 0;
+  filter:drop-shadow(0 12px 10px rgba(0,0,0,.38));
+}
+.vehicle-front-preview p{font-size:11px;line-height:1.5;color:#afc5d5;margin:6px 0 0}
+@media(max-width:600px){
+  .vehicle-front-preview{padding:10px}
+  .vehicle-front-preview img{max-height:190px}
+}

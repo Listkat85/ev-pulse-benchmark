@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./dashboard-v095.css">
   <link rel="stylesheet" href="./dashboard-v096.css">
   <link rel="stylesheet" href="./dashboard-v097.css">
+<link rel="stylesheet" href="./dashboard-v098.css?v=098">
 </head>
 <body>
 <div class="app-shell">
@@ -243,6 +244,14 @@
             <div class="vehicle-preview-head"><span>BILENS UDSEENDE</span><strong id="vehiclePreviewLabel">Kia EV6</strong></div>
             <img id="vehiclePreviewImage" src="./assets/heroes/gt-line/hero_gtline_klm_moonscape.png" alt="Visuel reference til valgt EV6-variant"/>
             <p id="vehiclePreviewNote" class="vehicle-preview-note">Vælg version og farve for at se bilens visuelle profil.</p>
+            <div class="vehicle-front-preview" aria-live="polite">
+              <div class="vehicle-front-preview-heading">
+                <span>FRONTMODEL – OPDATERES VED VALG</span>
+                <strong id="vehicleFrontPreviewLabel">Oprindelig EV6 · 77,4 kWh</strong>
+              </div>
+              <img id="vehicleFrontPreviewImage" src="./assets/vehicles/front/ev6-original-front.png" alt="Kia EV6 oprindelig generation set skråt forfra" decoding="async" />
+              <p>Vælg modelår og eventuelt generation, og tryk <strong>Gem bilprofil</strong> for at opdatere forsiden.</p>
+            </div>
           </div>
         </div>
         <div id="vehicleEditMessage" class="form-message" aria-live="polite"></div>
@@ -253,6 +262,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js"></script>
+<script src="./app.js?v=098"></script>
 </body>
 </html>

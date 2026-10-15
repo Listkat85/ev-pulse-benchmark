@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.9.7 · generation-specific EV6 front assets / Supabase only");
+  console.info("EV Pulse Benchmark v0.9.8 · reliable model-year / generation image switch / Supabase only");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -65,6 +65,16 @@
     return { trim,generation,pack:trim==="GT Performance"?"long":pack,
       capacity:resolveFactoryBattery({generation,pack,trim}) };
   }
+  // A model-year edit is an intentional change: suggest the generation for that
+  // model year immediately. A 2025 pre-facelift can still be selected explicitly.
+  // The stored kWh continues to distinguish the generations without DB migration.
+  function defaultGenerationForChangedYear(form) {
+    const year = num(form?.elements?.namedItem("model_year")?.value);
+    const field = form?.elements?.namedItem("generation");
+    if (!field || year === null) return;
+    field.value = year >= 2025 ? "facelift" : "original";
+  }
+
   function syncVehicleFactoryProfile(form) {
     if (!form) return;
     const profile = formProfile(form);
@@ -81,7 +91,7 @@
       generationField.disabled = year !== null && year < 2025;
     }
     const notice = form.querySelector("[data-profile-year-note]");
-    if (notice) notice.textContent = year>=2025 ? "Modelår alene afgør ikke facelift. Kontroller bilens batterigeneration." :
+    if (notice) notice.textContent = year>=2025 ? "2025+ foreslår facelift automatisk. Du kan stadig vælge oprindelig EV6 manuelt." :
       (profile.generation === "facelift" ? "Kontroller generationen: facelift er normalt fra modelår 2025." : "Før 2025 er den oprindelige generation låst og batteriet beregnes ud fra den.");
   }
   let heroLoadToken = 0;
@@ -298,6 +308,22 @@
     label.textContent = `${displayTrim(trim)} · ${paint.name}`;
     const expected = heroPath(trim, paint.code);
     const fallback = heroPath("GT-Line", paint.code);
+    // The front-car preview is synchronous and independent of the scenic rear hero.
+    // It follows the *draft* form while the user edits; the dashboard still reflects
+    // the saved Supabase vehicle until the Save operation succeeds.
+    const draft = formProfile(form);
+    const frontPreview = q("vehicleFrontPreviewImage");
+    if (frontPreview) {
+      const source = EV6_FRONT_IMAGES[draft.generation];
+      if (frontPreview.getAttribute("src") !== source) frontPreview.setAttribute("src", source);
+      frontPreview.alt = draft.generation === "facelift"
+        ? "Kia EV6 facelift set skråt forfra"
+        : "Kia EV6 oprindelig generation set skråt forfra";
+      frontPreview.dataset.generation = draft.generation;
+    }
+    const frontLabel = q("vehicleFrontPreviewLabel");
+    if (frontLabel) frontLabel.textContent =
+      `${draft.generation === "facelift" ? "Facelift" : "Oprindelig EV6"} · ${draft.capacity.toLocaleString("da-DK", {minimumFractionDigits:1,maximumFractionDigits:1})} kWh`;
     const probe = new Image();
     // Ignore delayed responses to rapidly changing selections.
     const token = expected + ":" + Date.now() + ":" + Math.random();
@@ -679,10 +705,16 @@
       try{await createVehicleFromForm(e.currentTarget);setMessage(q("vehicleFormMessage"),"Bilprofil gemt.","success")}
       catch(err){setMessage(q("vehicleFormMessage"),err.message||String(err),"error")}
     });
-    q("vehicleForm").addEventListener("change",()=>{
+    q("vehicleForm").addEventListener("change",e=>{
       const form=q("vehicleForm");
+      if(e.target.name === "model_year") defaultGenerationForChangedYear(form);
       if(form.elements.namedItem("trim_level")?.value==="GT Performance")form.elements.namedItem("variant").value="AWD";
       syncVehicleFactoryProfile(form);
+    });
+    q("vehicleForm").addEventListener("input",e=>{
+      if(e.target.name !== "model_year")return;
+      defaultGenerationForChangedYear(e.currentTarget);
+      syncVehicleFactoryProfile(e.currentTarget);
     });
     q("vehicleEditForm").addEventListener("submit",async e=>{
       e.preventDefault();setMessage(q("vehicleEditMessage"),"Gemmer…");
@@ -696,10 +728,18 @@
     });
     q("vehicleEditForm").addEventListener("change",e=>{
       const form=q("vehicleEditForm");
+      if(e.target.name === "model_year") defaultGenerationForChangedYear(form);
       if(e.target.name==="trim_level" && e.target.value==="GT Performance") {
         form.elements.namedItem("variant").value="AWD";
         form.elements.namedItem("battery_pack").value="long";
       }
+      syncVehicleFactoryProfile(form);
+      refreshVehiclePreview();
+    });
+    q("vehicleEditForm").addEventListener("input",e=>{
+      if(e.target.name !== "model_year")return;
+      const form=e.currentTarget;
+      defaultGenerationForChangedYear(form);
       syncVehicleFactoryProfile(form);
       refreshVehiclePreview();
     });
