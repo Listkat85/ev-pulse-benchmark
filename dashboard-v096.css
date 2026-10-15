@@ -1,0 +1,94 @@
+/* EV Pulse Benchmark v0.9.6 | true front-car transparency + reference sidebar.
+   Last stylesheet on purpose: canonical overrides, not another simulated layer.
+   Never put a backdrop, hard crop, gradient fade or clipping mask on the car. */
+:root { --ev-logo-blue:#50bbff; --ev-sidebar-ink:#d5e7f4; }
+.sidebar .brand-mark {
+  display:grid;place-items:center;flex:0 0 auto;
+  width:33px;height:33px;color:var(--ev-logo-blue);
+  filter:drop-shadow(0 0 5px rgba(48,174,249,.16));
+}
+.sidebar .brand-mark svg {
+  display:block;width:100%;height:100%;fill:none;stroke:currentColor;
+  stroke-width:5.8;stroke-linecap:round;stroke-linejoin:round;
+}
+.sidebar .brand {gap:7px;align-items:center;}
+.sidebar .brand-name {font-weight:810;letter-spacing:-.045em;line-height:1.04;}
+.sidebar .brand-sub {font-weight:450;color:#b9cbdc;letter-spacing:0;line-height:1.18;}
+.sidebar .nav-item {color:var(--ev-sidebar-ink);}
+.sidebar .nav-item.active {color:#71c8ff;background:linear-gradient(100deg,rgba(43,114,176,.53),rgba(49,107,156,.27));border:1px solid rgba(111,189,247,.3);border-left:3px solid #4eb9ff;}
+.sidebar .nav-item.active .nav-glyph {color:#60c6ff;}
+@media (min-width:801px) {
+  .app-shell{grid-template-columns:148px minmax(0,1fr)}
+  .sidebar{padding:15px 6px 13px;background:radial-gradient(ellipse 180px 260px at 40% 48%,rgba(79,124,158,.10),transparent 85%),linear-gradient(180deg,#182838,#132335 58%,#112233 100%)}
+  .sidebar .brand{padding:0 5px 27px}
+  .sidebar .nav{gap:6px}
+  .sidebar .nav-item{min-height:39px;height:39px;border-radius:7px;padding:8px 9px;gap:8px;font-size:11px;font-weight:575}
+  .sidebar .nav-glyph{flex:0 0 20px;width:20px}
+  .sidebar .nav-glyph svg{width:19px;height:19px;stroke-width:1.85}
+  .sidebar .brand-name{font-size:17px}
+  .sidebar .brand-sub{font-size:10px}
+  .sidebar .sync-card{background:transparent;border:0;box-shadow:none;padding:6px}
+  .sidebar .sync-title{font-size:10px}
+  .sidebar .sync-meta{font-size:9px;line-height:1.5;color:#9ab4c6}
+}
+/* A true RGBA cutout: all pixels outside the car are transparent, with no
+   clipping or bottom fading. CSS only determines size/placement/shadow. */
+.front-car-stage {pointer-events:none;overflow:visible!important;isolation:isolate;}
+.front-car-stage img,.front-car-stage img[data-paint] {
+  display:block;width:100%;height:auto;object-fit:contain;object-position:center;
+  opacity:1!important;
+  -webkit-mask-image:none!important;mask-image:none!important;
+  filter:drop-shadow(0 16px 13px rgba(0,0,0,.55))!important;
+  transform:none!important;
+}
+.front-car-stage:before {
+  content:"";position:absolute;left:15%;right:7%;bottom:0;
+  height:8%;border-radius:50%;background:rgba(0,0,0,.25);
+  filter:blur(17px);z-index:-1;
+}
+.front-car-stage .front-car-note {display:none!important;}
+@media (min-width:801px) and (max-width:1300px) {
+  .front-car-stage{left:-74px;top:-40px;width:min(43%,430px);max-width:45%;z-index:6}
+  .metrics-grid{z-index:5;margin-left:35%;}
+}
+@media (min-width:1301px) {
+  .front-car-stage{left:8px;top:-49px;width:clamp(440px,28vw,550px);max-width:38%;z-index:6}
+  .metrics-grid{z-index:5;}
+}
+@media (max-width:800px) {
+  .front-car-stage{left:0;top:0;width:min(100%,490px);max-width:100%;margin:-18px auto -18px;}
+  .front-car-stage img,.front-car-stage img[data-paint] {filter:drop-shadow(0 11px 10px rgba(0,0,0,.6))!important}
+}
+/* Highlight stale factory specifications without silently mutating Supabase. */
+.vehicle-spec-warning{
+  grid-column:1/-1; margin:0 0 9px;padding:10px 12px;border-radius:9px;
+  background:rgba(235,159,46,.09);border:1px solid rgba(235,159,46,.35);
+  color:#f2d59f;font-size:12px;line-height:1.5;
+}
+/* Keep the approved multicolor cell-delta visual scale. */
+.metric-card .meter.cell-meter {
+  background:linear-gradient(90deg,#1cb65d 0%,#52d865 22%,#a7db4f 41%,#f3de4e 57%,#f5a444 73%,#e44852 100%)!important;
+  min-height:9px;position:relative;border-radius:6px;
+}
+.metric-card .meter.cell-meter #deltaMeter{background:none!important;border-right:2px solid rgba(255,255,255,.95);box-shadow:none!important;}
+/* Scale the sidebar WITH the reference screenshot: ~92px at 1120px and
+   ~148px on wide desktops. This keeps the front vehicle entirely inside
+   content and prevents it from covering the navigation. */
+@media (min-width:801px) and (max-width:1300px) {
+  .app-shell {grid-template-columns:clamp(92px,8.26vw,108px) minmax(0,1fr)}
+  .sidebar{padding:10px 4px 12px}
+  .sidebar .brand{gap:3px;padding:0 2px 22px}
+  .sidebar .brand-mark{width:23px;height:23px;flex-basis:23px}
+  .sidebar .brand-name{font-size:12px}
+  .sidebar .brand-sub{font-size:8px}
+  .sidebar .nav{gap:5px}
+  .sidebar .nav-item{font-size:9px;gap:4px;padding:6px 3px;height:37px;min-height:37px}
+  .sidebar .nav-glyph{width:16px;flex-basis:16px}
+  .sidebar .nav-glyph svg{width:16px;height:16px}
+  .sidebar .sync-card{padding:3px}
+  .sidebar .sync-title{font-size:9px}
+  .sidebar .sync-vehicle,.sidebar .sync-meta{font-size:8px}
+  .topbar{padding-left:clamp(72px,7.35vw,92px)}
+  .front-car-stage{left:13px;top:-40px;width:min(390px,39%);max-width:40%;}
+  .metrics-grid{margin-left:39.1%}
+}

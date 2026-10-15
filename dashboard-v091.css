@@ -210,7 +210,7 @@ body {background:#091521; color:var(--premium-ink);}
  .shortcut{min-height:66px}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
-/* Mockup-like histogram is explicitly for ?demo=1; live data never draws invented bars. */
+/* Percentile labels appear only when the database returns peer benchmark statistics. */
 .percentile-current-label{position:absolute;bottom:calc(100% - 4px);transform:translateX(-50%);z-index:1;font-size:10px;white-space:nowrap;background:linear-gradient(180deg,#339df0,#197bd0);padding:5px 7px;border-radius:6px;color:#fff}
 
 /* v0.9.1 screenshot review: increase vehicle presence without changing rear hero. */
