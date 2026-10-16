@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v1.0.0 · Battery Intelligence");
+  console.info("EV Pulse Benchmark v1.1.0 · Internal / External Benchmark");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -9,6 +9,8 @@
   let currentBenchmark = null;
   const Catalog=window.EVPulseCatalog;
   const Intelligence=window.EVPulseIntelligence;
+  const BenchmarkHub=window.EVPulseBenchmarkHub;
+  let benchmarkHubTab="all";
   let currentAnalysis=null;
 
   // One canonical map. Every file lives at the same path in the ZIP and in GitHub.
@@ -518,7 +520,7 @@
     q("tempMeter").style.width = Number.isFinite(temp)?`${Math.max(0,Math.min(100,(temp+20)*1.35))}%`:"0%";
     q("heroInsight").textContent = records.length ? `${records.length} målinger · senest ${dateFmt(latestRecord?.recorded_at)}` : "Upload batterihistorik for at bygge tidslinjen.";
     renderSohChart(); renderEvidenceList(); renderFingerprint(); renderBenchmark();
-    renderIntelligence();
+    renderIntelligence();renderBenchmarkHub();
   }
 
   function chartRecordsForPeriod() {
@@ -640,6 +642,27 @@
     const mine=latestValid("soh_percent");
     box.innerHTML=`<div class="percentile-chart"><p class="percentile-title">SoH-placering blandt ${Number(data.sample_size).toLocaleString("da-DK")} sammenlignelige biler</p><div class="percentile-band"><span class="percentile-segment" style="left:25%;width:50%"></span><span class="percentile-median" style="left:50%"></span><span class="percentile-dot" style="left:${p}%" title="Din bil: ${fmt(p,0)}. percentil"></span>${mine!==null?`<span class="percentile-current-label" style="left:${p}%">Din bil ${fmt(mine,1)} %</span>`:""}</div><div class="percentile-axis"><span>Lavere</span><span>Median</span><span>Højere</span></div><div class="percentile-result"><div><small>Placering</small><strong>${esc(rank)}</strong></div><div><small>Flådens SoH-median</small><b>${fmt(median,1)} %</b><small>Midterste 50 %: ${fmt(low,1)}–${fmt(high,1)} %</small></div></div></div>`;
   }
+  // The hub is a read-only view. It never merges external research rows into the internal fleet.
+  function renderBenchmarkHub() {
+    const box=q("benchmarkHubContent");
+    if(!box||!BenchmarkHub)return;
+    box.innerHTML=BenchmarkHub.render({
+      tab:benchmarkHubTab,
+      vehicle:currentVehicle,
+      soh:latestValid("soh_percent"),
+      km:latestValid("odometer_km"),
+      recordCount:currentRecords.length,
+      benchmark:currentBenchmark
+    });
+    document.querySelectorAll('#benchmarkTabs [data-benchmark-tab]').forEach(btn=>{
+      const active=btn.dataset.benchmarkTab===benchmarkHubTab;
+      btn.classList.toggle('active',active);
+      btn.setAttribute('aria-selected',String(active));
+      btn.tabIndex=active?0:-1;
+    });
+    box.setAttribute('aria-labelledby','bm-tab-'+benchmarkHubTab);
+  }
+
   async function loadBenchmark() {
     currentBenchmark=null;
     if(!sb||!currentVehicle||!currentRecords.some(r=>num(r.soh_percent)>0)) {renderBenchmark();return;}
@@ -653,7 +676,7 @@
       if(error)throw error;
       currentBenchmark=Array.isArray(data)?data[0]||null:data||null;
     } catch(err){console.warn("EV Pulse: benchmark not available:",err?.message||err)}
-    renderBenchmark();renderSohChart();
+    renderBenchmark();renderSohChart();renderBenchmarkHub();
   }
 
   function renderFingerprint() {
@@ -844,9 +867,10 @@
   }
 
   function switchView(name) {
-    const targets={battery:"batterySummary",history:"historyPanel",compare:"comparePanel",fingerprint:"fingerprintPanel"};
-    const actual = ["upload","vehicle","condition"].includes(name)?name:"overview";
-    ["overview","upload","vehicle","condition"].forEach(v=>q(v+"View").classList.toggle("hidden",v!==actual));
+    const targets={battery:"batterySummary",history:"historyPanel",fingerprint:"fingerprintPanel"};
+    const actual = ["upload","vehicle","condition","compare"].includes(name)?name:"overview";
+    ["overview","upload","vehicle","condition","compare"].forEach(v=>q(v+"View").classList.toggle("hidden",v!==actual));
+    if(actual==="compare")renderBenchmarkHub();
     document.querySelectorAll(".nav-item").forEach(btn=>btn.classList.toggle("active",btn.dataset.view===name));
     if(targets[name]) requestAnimationFrame(()=>q(targets[name])?.scrollIntoView({behavior:"smooth",block:"center"}));
     if(actual==='overview')requestAnimationFrame(renderSohChart);
@@ -869,6 +893,20 @@
     q("quickUpload")?.addEventListener("click",()=>switchView("upload"));
     q("quickHistory")?.addEventListener("click",()=>switchView("history"));
     q("quickCompare")?.addEventListener("click",()=>switchView("compare"));
+    q("comparePanel")?.addEventListener("click",()=>switchView("compare"));
+    q("benchmarkTabs")?.addEventListener("click",e=>{
+      const tab=e.target.closest('[data-benchmark-tab]');
+      if(!tab)return;
+      benchmarkHubTab=tab.dataset.benchmarkTab;
+      renderBenchmarkHub();
+    });
+    q("benchmarkTabs")?.addEventListener("keydown",e=>{
+      if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;
+      const tabs=['all','internal','external'];
+      const idx=tabs.indexOf(benchmarkHubTab);
+      benchmarkHubTab=e.key==='Home'?tabs[0]:e.key==='End'?tabs.at(-1):tabs[(idx+(e.key==='ArrowLeft'?2:1))%tabs.length];
+      renderBenchmarkHub();q('bm-tab-'+benchmarkHubTab)?.focus();e.preventDefault();
+    });
     q("quickExport")?.addEventListener("click",exportOwnCsv);
     q("conditionReportButton")?.addEventListener("click",printBatteryReport);
     q("goCondition")?.addEventListener("click",()=>switchView("condition"));

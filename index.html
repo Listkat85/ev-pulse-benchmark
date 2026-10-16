@@ -4,9 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080B0F">
-  <title>EV Pulse Benchmark · v1.0.0</title>
+  <title>EV Pulse Benchmark · v1.1.0</title>
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./dashboard.css?v=1000">
+  <link rel="stylesheet" href="./dashboard.css?v=1100">
+  <link rel="stylesheet" href="./benchmark-hub.css?v=1100">
 </head>
 <body>
 <div class="app-shell">
@@ -228,6 +229,23 @@
       </div>
     </section>
 
+    <section id="compareView" class="view hidden" aria-label="Battery Benchmark 3.0">
+      <section class="panel bm-intro">
+        <div class="bm-eyebrow">EV PULSE BENCHMARK · 3.0</div>
+        <div class="bm-intro-row"><div><h2>Battery Benchmark</h2>
+          <p>Sammenlign med andre EV Pulse-biler og eksterne undersøgelser. Vi holder målemetoder og datakilder tydeligt adskilt.</p></div>
+          <div class="bm-version-tag">v1.1.0 · Ingen opdigtede flådedata</div></div>
+        <div class="bm-tabs" id="benchmarkTabs" role="tablist" aria-label="Vælg datakilde">
+          <button type="button" class="bm-tab active" id="bm-tab-all" role="tab" aria-selected="true" aria-controls="benchmarkHubContent" data-benchmark-tab="all">Samlet overblik</button>
+          <button type="button" class="bm-tab" id="bm-tab-internal" role="tab" aria-selected="false" aria-controls="benchmarkHubContent" data-benchmark-tab="internal">Intern flåde</button>
+          <button type="button" class="bm-tab" id="bm-tab-external" role="tab" aria-selected="false" aria-controls="benchmarkHubContent" data-benchmark-tab="external">Ekstern forskning</button>
+        </div>
+      </section>
+      <div id="benchmarkHubContent" role="tabpanel" aria-labelledby="bm-tab-all" class="bm-content" aria-live="polite">
+        <section class="panel bm-detail-card"><p>Venter på bilens data fra Supabase…</p></section>
+      </div>
+    </section>
+
     <section id="uploadView" class="view hidden">
       <section class="panel upload-panel">
         <div class="eyebrow">MANUEL SYNC · MVP</div>
@@ -290,6 +308,7 @@
 <script src="./config.js"></script>
 <script src="./vehicle-catalog.js?v=1000"></script>
 <script src="./battery-intelligence.js?v=1000"></script>
-<script src="./app.js?v=1000"></script>
+<script src="./benchmark-hub.js?v=1100"></script>
+<script src="./app.js?v=1100"></script>
 </body>
 </html>

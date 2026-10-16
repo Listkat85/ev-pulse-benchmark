@@ -1,3 +1,39 @@
+# EV Pulse Benchmark v1.1.0 – Internal / External / Combined
+
+**Opdatering oven på den fungerende v1.0.0.** Ændrer ingen Supabase-tabeller og kræver **ingen nye SQL-migrationer**, når SQL 07 og 08 allerede er kørt.
+
+## Opgradering
+
+1. Pak ZIP-filen ud i roden af samme Git-repository og erstat filerne. **Behold alle eksisterende assets og `config.js`.**
+2. Push til GitHub og vent på Vercel-deployment.
+3. Genindlæs siden med Ctrl+F5. Åbn **Sammenligning** i venstremenuen. Siden indeholder tre faner: **Samlet overblik**, **Intern flåde**, **Ekstern forskning**.
+4. Kontroller, at de 351 eksisterende poster fortsat vises. **Kør ikke SQL 07/08 igen** for denne opdatering, hvis de allerede er gennemført.
+
+## Vigtig dataintegritet
+
+- **Intern flåde:** præcis den eksisterende `get_soh_benchmark`-RPC i Supabase; mindst **5 andre** teknisk sammenlignelige biler, én SoH pr. bil. Egen bil er ikke med i flådetallet. Ingen demo- eller eksterne tal i percentiler.
+- **Ekstern forskning:** kildehenviste, **manuelt kontrollerede offentlige referencefakta** gemt i `benchmark-hub.js`. Ingen scraping, baggrundsopdatering, import eller deling af brugerens egne data med tredjeparter. Ingen nye databaseposter. EV6-resultat 95,95 % fra Carla/AVILOO >100.000 km holdes adskilt fra BMS SoH.
+- **Samlet overblik:** vises på samme side, men **ingen blandet median, sundhedsscore eller samlet rangering**.
+- **Offentlige forumeksempler:** tre selvrapporterede BMS-aflæsninger, mærket ikke-verificerede, **aldrig regnet med i den interne flåde**. Eksemplerne er et dateret øjebliksbillede fra 16. oktober 2026.
+- Publikationens totale **9.954 AVILOO-tests** er ikke delprøven for EV6; **EV6-testantal er ikke oplyst**. Vi viser det derfor ikke som 9.954 EV6-tests.
+- Anskaffelse af rådata fra Carla kræver særskilt tilladelse/licensaftale; dette er **ikke** en fuld ekstern dataintegration.
+
+## Kilder til den eksterne visning
+
+- Carla (8. juli 2026): https://www.carla.se/magasinet/elbilsmarknaden/elbilsmodellerna-med-hogst-batterihalsa-efter-10-000-mil
+- EV6-forum (jan.–mar. 2026): https://www.ev6-forum.de/forum/thread/3678-soh-und-km-st%C3%A4nde/
+
+## Nye filer
+
+- `benchmark-hub.js`: data- og viewfunktioner med kildehenvisninger og metodiske sikkerhedsregler.
+- `benchmark-hub.css`: responsivt udseende for dedikeret Sammenligning-side.
+
+## Bevarede funktioner
+
+Navigation, dashboard, SoH-graf, Battery Fingerprint, Battery Condition, PDF-rapport, bilprofil, CSV-import, Supabase-katalog, billeder og den eksisterende benchmark-RPC er bibeholdt. Intet overskrives i Supabase af installationen.
+
+---
+
 # EV Pulse Benchmark v1.0.0 – Battery Intelligence
 
 **Stor hovedopdatering af eksisterende EV Pulse Benchmark v0.10.1.**
