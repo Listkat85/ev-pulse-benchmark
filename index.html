@@ -4,20 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080B0F">
-  <title>EV Pulse Benchmark · v0.10.1</title>
+  <title>EV Pulse Benchmark · v1.0.0</title>
   <link rel="stylesheet" href="./styles.css">
-  <link rel="stylesheet" href="./dashboard-v09.css">
-  <link rel="stylesheet" href="./dashboard-v091.css">
-  <link rel="stylesheet" href="./dashboard-v092.css">
-  <link rel="stylesheet" href="./dashboard-v093.css">
-  <link rel="stylesheet" href="./dashboard-v094.css">
-  <link rel="stylesheet" href="./dashboard-v095.css">
-  <link rel="stylesheet" href="./dashboard-v096.css">
-  <link rel="stylesheet" href="./dashboard-v097.css">
-<link rel="stylesheet" href="./dashboard-v098.css?v=098">
-<link rel="stylesheet" href="./dashboard-v099.css?v=099">
-<link rel="stylesheet" href="./dashboard-v010.css?v=0100">
-<link rel="stylesheet" href="./dashboard-v0101.css?v=0101">
+  <link rel="stylesheet" href="./dashboard.css?v=1000">
 </head>
 <body>
 <div class="app-shell">
@@ -42,6 +31,7 @@
       <button class="nav-item" type="button" data-view="history"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span>Historik</span></button>
       <button class="nav-item" type="button" data-view="compare"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 20v-7m5 7V9m5 11V4m5 16v-9"/><path d="M2 20h20"/></svg></span><span>Sammenligning</span></button>
       <button class="nav-item" type="button" data-view="fingerprint"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2a9 9 0 0 0-9 9c0 4 1 7 2 9m7-13a4 4 0 0 0-4 4c0 4 .2 8-1 11m5-15a4 4 0 0 1 4 4c0 4-1 7-2 10m-2-6c0 3 0 5-1 7m10-9c.1-1 .1-2 0-3a9 9 0 0 0-9-8"/></svg></span><span>Battery<br>Fingerprint</span></button>
+      <button class="nav-item" type="button" data-view="condition"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4"/><path d="M4 4h16v16H4z"/></svg></span><span>Battery Condition</span></button>
       <button class="nav-item" type="button" data-view="upload"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M15 3v5h5M9 12h7M9 16h7"/></svg></span><span>Data</span></button>
       <button class="nav-item" type="button" data-view="vehicle" title="Indstillinger for Min bil"><span class="nav-glyph" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1M7.7 16.3l-2.1 2.1m12.8 0-2.1-2.1M7.7 7.7 5.6 5.6"/><circle cx="12" cy="12" r="4"/></svg></span><span>Indstillinger</span></button>
     </nav>
@@ -80,7 +70,7 @@
           <div class="spec"><span class="spec-symbol"><svg class="kpi-icon kpi-icon-battery" viewBox="0 0 24 24" role="img" aria-label="Batteri" fill="none"><rect x="6.2" y="5.1" width="11.6" height="16.6" rx="2.1"/><path d="M10 2.5h4M9 8.3h6"/><rect class="icon-power-fill" x="9" y="11" width="6" height="7.4" rx=".6"/></svg></span><strong id="specBattery">—</strong><small>Nominel kapacitet</small></div>
           <div class="spec"><span class="spec-symbol"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="5" cy="7" r="2.4"/><circle cx="19" cy="7" r="2.4"/><circle cx="5" cy="17" r="2.4"/><circle cx="19" cy="17" r="2.4"/><path d="M7.5 7h9M7.5 17h9M12 8v8"/></svg></span><strong id="specDrive">—</strong><small>Drivlinje</small></div>
           <div class="spec"><span class="spec-symbol"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M7 2v6M17 2v6M3 11h18M8 15h2M14 15h2"/></svg></span><strong id="specYear">—</strong><small>Modelår</small></div>
-          <div class="spec"><span class="spec-symbol"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3C6.7 3 3 6.9 3 11.9 3 17 7 21h4.1c1.5 0 2.4-1.2 2.4-2.4 0-1.4 1-2.1 2.1-2.1H19c2.1 0 2-2.4 2-4C21 6.9 16.9 3 12 3Z"/><circle cx="8.1" cy="10.1" r="1"/><circle cx="14.8" cy="7.5" r="1"/><circle cx="18" cy="12.1" r="1"/><circle cx="7.7" cy="16" r="1"/></svg></span><strong id="specColor">—</strong><small>Farve</small></div>
+          <div class="spec"><span class="spec-symbol"><svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3C6.7 3 3 6.9 3 11.9C3 17 6.7 21 12 21H14C15.6 21 16.3 19.8 16.3 18.7C16.3 17.4 17.3 16.7 18.5 16.7H19C21.1 16.7 21 14.3 21 12C21 6.9 16.9 3 12 3Z"/><circle cx="8.1" cy="10.1" r="1"/><circle cx="14.8" cy="7.5" r="1"/><circle cx="18" cy="12.1" r="1"/><circle cx="7.7" cy="16" r="1"/></svg></span><strong id="specColor">—</strong><small>Farve</small></div>
         </div>
         <span id="vehicleLine" class="screen-reader-only">Ingen bilprofil endnu</span>
       </div>
@@ -210,6 +200,34 @@
       </div>
     </section>
 
+    <section id="conditionView" class="view hidden">
+      <section class="panel intel-intro">
+        <div class="intel-head">
+          <div><div class="eyebrow">EV PULSE BATTERY INTELLIGENCE · 1.0</div><h2>Battery Condition</h2>
+            <p>En efterprøvbar screening af dine egne OBD-målinger. Ikke en fejldiagnose eller en målt kapacitet.</p></div>
+          <button type="button" class="primary-btn" id="conditionReportButton" title="Åbner browserens udskriftsdialog, hvor du kan vælge Gem som PDF">↧ Udskriv / Gem som PDF</button>
+        </div>
+        <div class="intel-stats">
+          <article><span>Status</span><strong id="conditionStatus">Afventer målinger</strong><small id="conditionPeriod">—</small></article>
+          <article><span>BMS SoH</span><strong id="conditionSoh">—</strong><small>BMS-rapporteret værdi</small></article>
+          <article><span>Historik</span><strong id="conditionDays">—</strong><small id="conditionCoverage">—</small></article>
+          <article><span>Celle-screening</span><strong id="conditionCells">—</strong><small>≥100 mV ved 20–90 % SoC, ikke defektgrænse</small></article>
+        </div>
+      </section>
+      <div class="intel-cols">
+        <section class="panel intel-evidence"><div class="section-heading"><div class="section-title-wrap"><span class="section-symbol icy">◎</span><h3>Hvad kan vi konkludere?</h3></div></div>
+          <div class="intel-inline"><strong>Datakvalitet</strong><p id="conditionReliability">—</p></div>
+          <div class="intel-inline"><strong>Brugbar batterikapacitet</strong><p id="conditionCapacity">—</p></div>
+          <h4>Observationer</h4><ul id="conditionGuidance" class="intel-observations"></ul>
+          <p class="intel-caution">Cellebalance påvirkes af SoC, belastning og temperatur. Screeningen er ikke en erstatning for værkstedets diagnose.</p>
+        </section>
+        <section class="panel intel-events"><div class="section-heading"><div class="section-title-wrap"><span class="section-symbol">⌁</span><h3>Diagnostisk hændelseshistorik</h3></div><span id="conditionCount" class="intel-event-count"></span></div>
+          <p class="intel-description">Kun hændelser, der kan udledes direkte af importerede felter. Ingen konstruerede DTC'er eller antagelser om, at bilen var parkeret.</p>
+          <div id="conditionTimeline" class="intel-timeline"><p class="intel-empty">Afventer data.</p></div>
+        </section>
+      </div>
+    </section>
+
     <section id="uploadView" class="view hidden">
       <section class="panel upload-panel">
         <div class="eyebrow">MANUEL SYNC · MVP</div>
@@ -266,9 +284,12 @@
     </section>
   </main>
 </div>
+<div id="batteryPrintReport" aria-hidden="true"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="./config.js"></script>
-<script src="./app.js?v=0101"></script>
+<script src="./vehicle-catalog.js?v=1000"></script>
+<script src="./battery-intelligence.js?v=1000"></script>
+<script src="./app.js?v=1000"></script>
 </body>
 </html>

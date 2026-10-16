@@ -1,5 +1,5 @@
 (() => {
-  console.info("EV Pulse Benchmark v0.10.1 · clear battery status and honest measurement coverage");
+  console.info("EV Pulse Benchmark v1.0.0 · Battery Intelligence");
   const cfg = window.EVPULSE_CONFIG;
   let sb = null;
   let sessionUser = null;
@@ -7,6 +7,9 @@
   let currentRecords = [];
   let parsedRows = [];
   let currentBenchmark = null;
+  const Catalog=window.EVPulseCatalog;
+  const Intelligence=window.EVPulseIntelligence;
+  let currentAnalysis=null;
 
   // One canonical map. Every file lives at the same path in the ZIP and in GitHub.
   const HERO_ROOT = "./assets/heroes/";
@@ -41,59 +44,107 @@
   // A 2023 Long Range cannot be reinterpreted as an 84-kWh facelift just
   // because a legacy row accidentally stored 84.
   function inferBatteryProfile(vehicle) {
-    const year = num(vehicle?.model_year);
-    const nominal = num(vehicle?.battery_nominal_kwh);
-    const smallPack = nominal !== null && [58,62.9,63].some(kwh=>Math.abs(nominal-kwh)<.2);
-    const trim = vehicle?.trim_level;
-    const pack = trim === "GT Performance" ? "long" : smallPack ? "standard" : "long";
-    const generation = year !== null && year < 2025 ? "original" :
-      nominal !== null && [58,77.4].some(kwh=>Math.abs(nominal-kwh)<.2) ? "original" : "facelift";
-    return {pack,generation};
+    const specific=Catalog?.get(vehicle?.catalog_variant_key);
+    if(specific)return {generation:specific.generation,pack:specific.pack};
+    // Legacy *read-only* bridge. The catalogue must be confirmed when saving.
+    const year=num(vehicle?.model_year),gross=num(vehicle?.battery_nominal_kwh);
+    const pack=gross!==null && [58,62.9,63].some(x=>Math.abs(x-gross)<.2)?'standard':'long';
+    const generation=year!==null&&year<2025?'original':
+      gross!==null&&[58,77.4].some(x=>Math.abs(x-gross)<.2)?'original':'facelift';
+    return {generation,pack};
   }
   function resolveFactoryBattery({generation,pack,trim}) {
-    const version = generation === "facelift" ? "facelift" : "original";
-    const capacity = EV6_BATTERY_PROFILES[version][trim === "GT Performance" ? "long" : pack === "standard" ? "standard" : "long"];
-    return Number(capacity);
+    const entry=Catalog?.find({generation,pack,trim})?.[0]||Catalog?.find({generation,pack})?.[0];
+    return entry?entry.kwh:null;
+  }
+  function formVariant(form) {
+    if(!form)return null;
+    const field=form.elements.namedItem('catalog_variant_key');
+    const key=field?.value||'';
+    const row=Catalog.get(key);
+    const year=num(form.elements.namedItem('model_year')?.value);
+    if(!row||!row.years.includes(year)||row.generation!==form.elements.namedItem('generation')?.value||
+      row.pack!==form.elements.namedItem('battery_pack')?.value||row.drive!==form.elements.namedItem('variant')?.value||
+      row.trim!==form.elements.namedItem('trim_level')?.value)return null;
+    return row;
   }
   function formProfile(form) {
-    const trim = trimFromForm(form);
-    const selectedGeneration = form.elements.namedItem("generation")?.value || "original";
-    const year = num(form.elements.namedItem("model_year")?.value);
-    const generation = year !== null && year < 2025 ? "original" :
-      selectedGeneration === "facelift" ? "facelift" : "original";
-    const pack = form.elements.namedItem("battery_pack")?.value === "standard" ? "standard" : "long";
-    return { trim,generation,pack:trim==="GT Performance"?"long":pack,
-      capacity:resolveFactoryBattery({generation,pack,trim}) };
+    const row=formVariant(form);
+    return {trim:row?.trim||'Standard',generation:row?.generation||'original',
+      pack:row?.pack||'long',capacity:row?.kwh??null};
   }
-  // A model-year edit is an intentional change: suggest the generation for that
-  // model year immediately. A 2025 pre-facelift can still be selected explicitly.
-  // The stored kWh continues to distinguish the generations without DB migration.
-  function defaultGenerationForChangedYear(form) {
-    const year = num(form?.elements?.namedItem("model_year")?.value);
-    const field = form?.elements?.namedItem("generation");
-    if (!field || year === null) return;
-    field.value = year >= 2025 ? "facelift" : "original";
+  function catalogFormMarkup(vehicle) {
+    const legacy=Catalog.fromLegacy(vehicle);
+    const initial=Catalog.get(vehicle?.catalog_variant_key)||legacy;
+    const year=vehicle?.model_year||2023;
+    return `<div class="vehicle-form-section"><div class="eyebrow">VERIFICERET BILKATALOG</div><h3>Vælg din bil</h3>
+      <div class="vehicle-fields ev-catalog-fields">
+        <label>Mærke<select name="manufacturer" required><option value="Kia">Kia</option></select></label>
+        <label>Model<select name="model" required><option value="EV6">EV6</option></select></label>
+        <label>Modelår<select name="model_year" required>${Catalog.modelYears().map(y=>`<option value="${y}" ${+year===y?'selected':''}>${y}</option>`).join('')}</select></label>
+        <label>Generation<select name="generation" required data-catalog-default="${esc(initial?.generation||'')}"></select></label>
+        <label>Batterivariant<select name="battery_pack" required data-catalog-default="${esc(initial?.pack||'')}"></select></label>
+        <label>Drivlinje<select name="variant" required data-catalog-default="${esc(initial?.drive||'')}"></select></label>
+        <label>Udstyrsvariant<select name="trim_level" required data-catalog-default="${esc(initial?.trim||'')}"></select></label>
+        <label>Fabriksbatteri <small>(låst)</small><input name="battery_nominal_kwh" readonly tabindex="-1" value=""></label>
+        <label>Platform <small>(låst)</small><input name="platform" readonly tabindex="-1" value="E-GMP"></label>
+        <input type="hidden" name="catalog_variant_key" value="">
+      </div>
+      <p class="vehicle-settings-hint" data-profile-year-note>Vælg alle felter. Batterikapaciteten bestemmes automatisk af den valgte fabriksvariant.</p>
+      <p class="catalog-source-note">Tekniske data fra Kia Danmark. Kataloget omfatter indtil videre validerede EV6-kombinationer; øvrige mærker tilføjes efter verificering. 2025 kræver eksplicit generation.</p>
+    </div>`;
+  }
+  const selectOpt=(value,label)=>`<option value="${esc(value)}">${esc(label)}</option>`;
+  function catalogSelect(field,options,preferred,placeholder='Vælg…'){
+    const el=field;if(!el)return '';
+    const values=options.map(x=>typeof x==='string'?{value:x,label:x}:x);
+    el.innerHTML=selectOpt('',placeholder)+values.map(x=>selectOpt(x.value,x.label)).join('');
+    const wanted=values.some(x=>x.value===preferred)?preferred:'';
+    el.value=wanted||(values.length===1?values[0].value:'');
+    return el.value;
+  }
+  function syncVehicleFactoryProfile(form,changeField='',initial=false){
+    if(!form)return;
+    const f=k=>form.elements.namedItem(k);
+    const year=num(f('model_year')?.value);
+    const options=Catalog.find({year});
+    const unique=(items)=>[...new Set(items)];
+    const old=k=>initial?(f(k)?.dataset.catalogDefault||''):(f(k)?.value||'');
+    const previous={generation:old('generation'),battery_pack:old('battery_pack'),variant:old('variant'),trim_level:old('trim_level')};
+    // 2025 overlaps production generations. Never infer it silently after a year change.
+    const gens=unique(options.map(v=>v.generation));
+    const yearChanged=changeField==='model_year';
+    const desiredGen=yearChanged&&gens.length>1?'':previous.generation;
+    const generation=catalogSelect(f('generation'),gens.map(x=>({value:x,label:x==='facelift'?'Facelift (ny generation)':'Oprindelig'})),desiredGen,gens.length>1?'Vælg generation – obligatorisk':'Vælg generation');
+    const packs=unique(Catalog.find({year,generation}).map(v=>v.pack));
+    const pack=catalogSelect(f('battery_pack'),packs.map(x=>({value:x,label:x==='long'?'Long Range':'Standard Range'})),yearChanged?'':previous.battery_pack,'Vælg batteripakke');
+    const drives=unique(Catalog.find({year,generation,pack}).map(v=>v.drive));
+    const drive=catalogSelect(f('variant'),drives,yearChanged?'':previous.variant,'Vælg drivlinje');
+    const trims=unique(Catalog.find({year,generation,pack,drive}).map(v=>v.trim));
+    const trim=catalogSelect(f('trim_level'),trims.map(x=>({value:x,label:x==='Standard'?'EV6 Standard':x==='GT-Line'?'EV6 GT-Line':'EV6 GT (Performance)'})),yearChanged?'':previous.trim_level,'Vælg udstyr');
+    const row=Catalog.find({year,generation,pack,drive,trim})[0]||null;
+    f('catalog_variant_key').value=row?.key||'';
+    f('battery_nominal_kwh').value=row?`${row.kwh.toLocaleString('da-DK',{minimumFractionDigits:1,maximumFractionDigits:1})} kWh`:'—';
+    const output=form.querySelector('[data-factory-capacity]');
+    if(output)output.textContent=row?`${row.kwh.toLocaleString('da-DK')} kWh`:'Vælg variant';
+    const note=form.querySelector('[data-profile-year-note]');
+    if(note)note.textContent=year===2025&&!generation?'2025 kan være original eller facelift. Vælg generationen eksplicit.':
+      row?`${row.generation==='original'?'Oprindelig EV6':'Facelift'} · ${row.kwh.toLocaleString('da-DK')} kWh nominelt · ${row.drive} · fabriksspecifikation låst.`:
+      'Vælg en verificeret kombination for at fortsætte.';
+    const save=form.querySelector('button[type="submit"]');if(save)save.disabled=!row;
+  }
+  function setupNewVehicleForm(){
+    const form=q('vehicleForm');
+    if(!form)return;
+    form.innerHTML=catalogFormMarkup(null)+`<button type="submit" class="primary-btn">Gem bilprofil</button>`;
+    syncVehicleFactoryProfile(form,'',true);
+  }
+  function catalogChanged(form,field){
+    syncVehicleFactoryProfile(form,field,false);
+    if(form.id==='vehicleEditForm')refreshVehiclePreview();
   }
 
-  function syncVehicleFactoryProfile(form) {
-    if (!form) return;
-    const profile = formProfile(form);
-    const capacityField = form.elements.namedItem("battery_nominal_kwh");
-    if (capacityField) capacityField.value = profile.capacity.toFixed(1);
-    const output = form.querySelector("[data-factory-capacity]");
-    if (output) output.textContent = profile.capacity.toLocaleString("da-DK",{minimumFractionDigits:1,maximumFractionDigits:1})+" kWh";
-    const packField = form.elements.namedItem("battery_pack");
-    if (packField) packField.disabled = profile.trim === "GT Performance";
-    const year = num(form.elements.namedItem("model_year")?.value);
-    const generationField = form.elements.namedItem("generation");
-    if (generationField) {
-      generationField.value = profile.generation;
-      generationField.disabled = year !== null && year < 2025;
-    }
-    const notice = form.querySelector("[data-profile-year-note]");
-    if (notice) notice.textContent = year>=2025 ? "2025+ foreslår facelift automatisk. Du kan stadig vælge oprindelig EV6 manuelt." :
-      (profile.generation === "facelift" ? "Kontroller generationen: facelift er normalt fra modelår 2025." : "Før 2025 er den oprindelige generation låst og batteriet beregnes ud fra den.");
-  }
+
   let heroLoadToken = 0;
 
 
@@ -262,9 +313,20 @@
 
   async function loadRecords() {
     if (!currentVehicle) { currentRecords = []; renderDashboard(); return; }
-    const { data, error } = await sb.from("battery_records").select("*").eq("vehicle_id", currentVehicle.id).order("recorded_at", { ascending: true }).limit(5000);
-    if (error) throw error;
-    currentRecords = data || [];
+    // Paginate explicitly: Supabase projects often cap a single query at 1,000 rows.
+    // Never silently interpret the first batch as the entire battery history.
+    const PAGE=1000,MAX=50000;
+    const records=[];
+    for(let offset=0;offset<MAX;offset+=PAGE){
+      const {data,error}=await sb.from('battery_records').select('*')
+        .eq('vehicle_id',currentVehicle.id).order('recorded_at',{ascending:true})
+        .range(offset,offset+PAGE-1);
+      if(error)throw error;
+      records.push(...(data||[]));
+      if(!data||data.length<PAGE)break;
+      if(offset+PAGE>=MAX)throw new Error('Historikken overstiger 50.000 poster. Udvid indlæsningen, før data kan analyseres fuldstændigt.');
+    }
+    currentRecords=records;
     renderDashboard();
     await loadBenchmark();
   }
@@ -323,7 +385,7 @@
     }
     const frontLabel = q("vehicleFrontPreviewLabel");
     if (frontLabel) frontLabel.textContent =
-      `${draft.generation === "facelift" ? "Facelift" : "Oprindelig EV6"} · ${draft.capacity.toLocaleString("da-DK", {minimumFractionDigits:1,maximumFractionDigits:1})} kWh`;
+      draft.capacity===null?'Vælg generation og variant':`${draft.generation === "facelift" ? "Facelift" : "Oprindelig EV6"} · ${draft.capacity.toLocaleString("da-DK", {minimumFractionDigits:1,maximumFractionDigits:1})} kWh`;
     const probe = new Image();
     // Ignore delayed responses to rapidly changing selections.
     const token = expected + ":" + Date.now() + ":" + Math.random();
@@ -366,36 +428,18 @@
   }
 
   function vehicleEditMarkup() {
-    if (!currentVehicle) return '<div class="empty-state">Opret først bilprofilen.</div>';
-    const trim = EV6_TRIMS[currentVehicle.trim_level] ? currentVehicle.trim_level : "GT-Line";
-    const color = currentVehicle.exterior_color_code || "KLM";
-    const variant = currentVehicle.variant || "RWD";
-    const paint = paintByCode(color);
-    const profile = inferBatteryProfile(currentVehicle);
-    return `
-      <div class="vehicle-form-section"><div class="eyebrow">BILIDENTITET</div><h3>Model og drivlinje</h3>
-        <div class="vehicle-fields">
-          <label>Mærke<input name="manufacturer" value="Kia" readonly></label>
-          <label>Model<input name="model" value="EV6" readonly></label>
-          <label>Modelår<input name="model_year" type="number" min="2021" max="2032" value="${esc(currentVehicle.model_year || 2023)}" required></label>
-          <label>Drivlinje<select name="variant"><option value="RWD" ${variant==="RWD"?"selected":""}>RWD · Baghjulstræk</option><option value="AWD" ${variant==="AWD"?"selected":""}>AWD · Firehjulstræk</option></select></label>
-          <label>Generation<select name="generation"><option value="original" ${profile.generation==="original"?"selected":""}>Oprindelig (77,4/58 kWh)</option><option value="facelift" ${profile.generation==="facelift"?"selected":""}>Facelift (84/63 kWh)</option></select></label>
-          <label>Batterivariant<select name="battery_pack"><option value="standard" ${profile.pack==="standard"?"selected":""}>Standard Range</option><option value="long" ${profile.pack==="long"?"selected":""}>Long Range</option></select></label>
-          <label>Nominal fabriksbatteri<input name="battery_nominal_kwh" value="${esc(resolveFactoryBattery({...profile,trim}))}" readonly tabindex="-1" aria-label="Låst nominel batterikapacitet"></label>
-          <label>Platform<input name="platform" value="E-GMP" readonly></label>
-        </div><p class="vehicle-settings-hint" data-profile-year-note>Tekniske specifikationer styres af modelgeneration og batterivariant.</p></div>
-      <div class="vehicle-form-section"><div class="eyebrow">KIA EV6</div><h3>Udstyrsvariant</h3>
-        <div class="trim-options" role="group" aria-label="Vælg udstyrsvariant">
-          ${Object.entries(EV6_TRIMS).map(([key,data]) => `<label class="trim-card"><input type="radio" name="trim_level" value="${key}" ${key===trim?"checked":""}><span>${esc(data.label)}</span></label>`).join("")}
-        </div><p class="vehicle-settings-hint">GT Performance har AWD og Long Range som låste tekniske valg. Udstyrsvariant og drivlinje er forskellige oplysninger.</p>
-      </div>
+    if(!currentVehicle)return '<div class="empty-state">Opret først bilprofilen.</div>';
+    const paint=paintByCode(currentVehicle.exterior_color_code||'KLM');
+    return `${catalogFormMarkup(currentVehicle)}
       <div class="vehicle-form-section"><div class="eyebrow">KARROSSERI</div><h3>Original Kia-farve</h3>
         <input type="hidden" name="exterior_color_code" value="${esc(paint.code)}">
         <div class="vehicle-color-row"><div id="vehiclePaintSwatches" class="paint-swatches"></div><span id="vehiclePaintName" class="paint-name">${esc(paint.name)}</span></div>
-        <p class="vehicle-settings-hint">Hero-billedet bagfra følger den valgte farve. Den fritlagte frontbil skifter mellem oprindelig EV6 og facelift efter bilens generation; begge frontbilleder er mørkegrå referenceillustrationer og skifter endnu ikke lakfarve.</p>
+        <p class="vehicle-settings-hint">Hero-billedet bagfra følger farven. Det fritlagte frontbillede følger generationen og er en referenceillustration.</p>
       </div>
-      <div class="vehicle-save-row"><button class="primary-btn" type="submit">Gem bilprofil</button><span>Fabriksbatteri: <strong data-factory-capacity></strong> · Gemmes i din eksisterende Supabase-profil.</span></div>`;
+      <div class="vehicle-save-row"><button class="primary-btn" type="submit">Gem bilprofil</button>
+        <span>Fabriksbatteri: <strong data-factory-capacity></strong> · Kun gyldige katalogvarianter gemmes.</span></div>`;
   }
+
 
   function renderVehicleState() {
     const setup = q("setupPanel");
@@ -424,13 +468,15 @@
     q("sideVehicle").textContent = vehicleName;
     q("vehicleEditForm").innerHTML = vehicleEditMarkup();
     renderPaintSwatches(q("vehicleEditForm"));
-    syncVehicleFactoryProfile(q("vehicleEditForm"));
+    syncVehicleFactoryProfile(q("vehicleEditForm"),"",true);
     const expected=resolveFactoryBattery({...profile,trim:currentVehicle.trim_level});
     const stored=num(currentVehicle.battery_nominal_kwh);
-    if(stored!==null && Math.abs(stored-expected)>.2) {
+    if(!currentVehicle.catalog_variant_key || (stored!==null && expected!==null && Math.abs(stored-expected)>.2)) {
       const el=document.createElement("p");
       el.className="vehicle-spec-warning";
-      el.textContent=`Supabase har en ældre batteriværdi (${fmt(stored,1)} kWh), som ikke passer til bilprofilen (${fmt(expected,1)} kWh). Vælg Gem bilprofil for at rette denne værdi i din egen databasepost.`;
+      el.textContent=currentVehicle.catalog_variant_key
+        ?`Den gamle batteriværdi (${fmt(stored,1)} kWh) matcher ikke kataloget (${fmt(expected,1)} kWh). Kontrollér og gem bilprofilen.`
+        :'Ældre bilprofil uden bekræftet katalogvariant. Kontrollér årgang og generation, og vælg Gem bilprofil for at knytte den til det verificerede katalog.';
       q("vehicleEditForm").prepend(el);
     }
     applyVehicleVisual();
@@ -456,7 +502,7 @@
     q("heroSoh").textContent = latestSoh===null?"—":fmt(latestSoh,1);
     q("metricSohMeta").textContent = latestSoh===null?"Ingen SoH-målinger":"BMS SoH · kilde: Supabase";
     const capacity = currentVehicle ? resolveFactoryBattery({...inferBatteryProfile(currentVehicle),trim:currentVehicle.trim_level}) : null;
-    q("metricCapacityEstimate").textContent = latestSoh===null || capacity===null ? "Estimeret kapacitet: —" : `Nominel × SoH ≈ ${fmt(capacity*latestSoh/100,1)} kWh`;
+    q("metricCapacityEstimate").textContent = "Brugbar kapacitet: ikke målt";
     q("sohMeter").style.width = latestSoh===null?"0%":`${Math.max(0,Math.min(100,latestSoh))}%`;
     // The uploaded Battery Evidence CSV has no reliable consumption or range value.
     q("metricRange").textContent = "—";
@@ -472,6 +518,7 @@
     q("tempMeter").style.width = Number.isFinite(temp)?`${Math.max(0,Math.min(100,(temp+20)*1.35))}%`:"0%";
     q("heroInsight").textContent = records.length ? `${records.length} målinger · senest ${dateFmt(latestRecord?.recorded_at)}` : "Upload batterihistorik for at bygge tidslinjen.";
     renderSohChart(); renderEvidenceList(); renderFingerprint(); renderBenchmark();
+    renderIntelligence();
   }
 
   function chartRecordsForPeriod() {
@@ -579,7 +626,7 @@
     if(currentVehicle) {
       const expected=resolveFactoryBattery({...inferBatteryProfile(currentVehicle),trim:currentVehicle.trim_level});
       const stored=num(currentVehicle.battery_nominal_kwh);
-      if(stored!==null && Math.abs(stored-expected)>.2) {
+      if(!currentVehicle.catalog_variant_key || (stored!==null && expected!==null && Math.abs(stored-expected)>.2)) {
         box.innerHTML='<div class="benchmark-placeholder"><strong>Bilprofil skal opdateres</strong><span>Den gemte batteristørrelse stemmer ikke med bilens modelår. Ret den under Min bil før flådesammenligning.</span></div>';
         return;
       }
@@ -597,8 +644,8 @@
     currentBenchmark=null;
     if(!sb||!currentVehicle||!currentRecords.some(r=>num(r.soh_percent)>0)) {renderBenchmark();return;}
     const canonical=resolveFactoryBattery({...inferBatteryProfile(currentVehicle),trim:currentVehicle.trim_level});
-    if (Math.abs(Number(currentVehicle.battery_nominal_kwh)-canonical)>.2) {
-      console.warn("EV Pulse: gammel Supabase-profil har forkert fabriksbatteri; ret under Min bil før flådesammenligning.");
+    if (!currentVehicle.catalog_variant_key || canonical===null || Math.abs(Number(currentVehicle.battery_nominal_kwh)-canonical)>.2) {
+      console.warn('EV Pulse: flådematch kræver verificeret katalogvariant, ret bilprofilen under Min bil.');
       renderBenchmark();return;
     }
     try {
@@ -693,52 +740,82 @@
   }
 
   async function createVehicleFromForm(form) {
-    const fd=new FormData(form);
-    const defaultPaint=paintByCode("KLM");
-    const payload={
-      anon_vehicle_id:crypto.randomUUID(),
-      platform:String(fd.get("platform")||"E-GMP").trim(),
-      manufacturer:String(fd.get("manufacturer")||"").trim(),
-      model:String(fd.get("model")||"").trim(),
-      variant:String(fd.get("trim_level")) === "GT Performance" ? "AWD" : String(fd.get("variant")||"RWD").trim(),
-      model_year:num(fd.get("model_year")),
-      battery_nominal_kwh:formProfile(form).capacity,
-      trim_level:EV6_TRIMS[String(fd.get("trim_level"))] ? String(fd.get("trim_level")) : "Standard",
-      exterior_color_code:defaultPaint.code,
-      exterior_color_name:defaultPaint.name
-    };
-    if (payload.trim_level==="GT Performance" && payload.variant!=="AWD") throw new Error("GT Performance kræver AWD.");
-    const {data,error}=await sb.from("vehicles").insert(payload).select("*").single();
+    const row=formVariant(form);
+    if(!row)throw new Error('Vælg en gyldig, verificeret bilvariant.');
+    const paint=paintByCode('KLM');
+    const payload={anon_vehicle_id:crypto.randomUUID(),manufacturer:row.manufacturer,
+      model:row.model,model_year:Number(form.elements.namedItem('model_year').value),
+      variant:row.drive,trim_level:row.trim,battery_nominal_kwh:row.kwh,
+      platform:row.platform,catalog_variant_key:row.key,
+      exterior_color_code:paint.code,exterior_color_name:paint.name};
+    const {data,error}=await sb.from('vehicles').insert(payload).select('*').single();
     if(error)throw error;
     currentVehicle=data;renderVehicleState();await loadRecords();
   }
-
   async function updateVehicleFromForm(form) {
-    const fd=new FormData(form);
-    const colorCode=String(fd.get("exterior_color_code")||"KLM");
-    const paint=paintByCode(colorCode);
-    const trim = String(fd.get("trim_level")||"GT-Line");
-    const drive = String(fd.get("variant")||"RWD");
-    if (trim === "GT Performance" && drive !== "AWD") {
-      throw new Error("EV6 GT (Performance) har AWD. Vælg AWD som drivlinje.");
-    }
-    const payload={
-      platform:String(fd.get("platform")||"").trim(),
-      manufacturer:String(fd.get("manufacturer")||"").trim(),
-      model:String(fd.get("model")||"").trim(),
-      variant:drive,
-      model_year:num(fd.get("model_year")),
-      battery_nominal_kwh:formProfile(form).capacity,
-      trim_level:EV6_TRIMS[trim] ? trim : "GT-Line",
-      exterior_color_code:paint.code,
-      exterior_color_name:paint.name,
-      updated_at:new Date().toISOString()
-    };
-    const {data,error}=await sb.from("vehicles").update(payload)
-      .eq("id",currentVehicle.id).eq("owner_user_id",sessionUser.id)
-      .select("*").single();
+    const row=formVariant(form);
+    if(!row)throw new Error('Vælg en gyldig, verificeret bilvariant.');
+    const paint=colorFromForm(form);
+    const payload={manufacturer:row.manufacturer,model:row.model,
+      model_year:Number(form.elements.namedItem('model_year').value),variant:row.drive,
+      trim_level:row.trim,battery_nominal_kwh:row.kwh,platform:row.platform,
+      catalog_variant_key:row.key,exterior_color_code:paint.code,
+      exterior_color_name:paint.name,updated_at:new Date().toISOString()};
+    const {data,error}=await sb.from('vehicles').update(payload)
+      .eq('id',currentVehicle.id).eq('owner_user_id',sessionUser.id)
+      .select('*').single();
     if(error)throw error;
     currentVehicle=data;renderVehicleState();renderDashboard();await loadBenchmark();
+  }
+
+
+
+  function renderIntelligence(){
+    currentAnalysis=Intelligence.analyze(currentRecords);
+    const a=currentAnalysis;
+    const nodes=['conditionStatus','conditionDays','conditionSoh','conditionCells','conditionCoverage','conditionPeriod','conditionReliability','conditionCapacity','conditionGuidance','conditionTimeline'];
+    if(!q('conditionStatus'))return;
+    q('conditionStatus').textContent=a.status;
+    q('conditionDays').textContent=`${a.days.toLocaleString('da-DK')} måledage`;
+    q('conditionSoh').textContent=a.sohLast===null?'—':`${fmt(a.sohLast,1)} %`;
+    q('conditionCells').textContent=a.cellDays?`${a.cellDays} dage`:'Ingen gentagne screeninger';
+    q('conditionCoverage').textContent=`${a.coveredBands}/5 SoC-områder`;
+    q('conditionPeriod').textContent=a.dateStart?`${dateFmt(a.dateStart).split(',')[0]} – ${dateFmt(a.dateEnd).split(',')[0]}`:'Ingen målinger';
+    q('conditionReliability').textContent=a.reliability;
+    q('conditionCapacity').textContent=a.referenceCount?'Energireference registreret, men ingen uafhængig kapacitetstest':'Ikke målt – kræver kontrolleret kapacitetstest';
+    q('conditionGuidance').innerHTML=a.recommendations.map(x=>`<li>${esc(x)}</li>`).join('');
+    const icons={soh:'↘',cell:'⚡',soc:'⌁',dtc:'!' };
+    q('conditionTimeline').innerHTML=a.events.length?a.events.slice(0,60).map(e=>`
+      <article class="intel-event intel-${e.kind}"><span class="intel-event-symbol">${icons[e.kind]||'•'}</span>
+        <div><div class="intel-event-top"><strong>${esc(e.title)}</strong><time datetime="${esc(e.time)}">${esc(dateFmt(e.time))}</time></div>
+          <p>${esc(e.detail)}</p></div></article>`).join(''):
+      '<p class="intel-empty">Ingen specifikke screeningshændelser i de tilgængelige målinger.</p>';
+    q('conditionCount').textContent=`${a.events.length} registrerede observationshændelser`;
+  }
+
+  function reportMarkup(){
+    const a=currentAnalysis||Intelligence.analyze(currentRecords);
+    const specs=Catalog.get(currentVehicle?.catalog_variant_key)||Catalog.fromLegacy(currentVehicle);
+    const name=specs?`${specs.manufacturer} ${specs.model} · ${specs.generation==='original'?'Original':'Facelift'} · ${specs.kwh.toLocaleString('da-DK')} kWh · ${specs.drive}`:'Bilprofil ikke verificeret';
+    const d=(v)=>v?dateFmt(v):'—';
+    return `<div class="report-sheet"><header><div class="report-brand">EV PULSE <span>BATTERY INTELLIGENCE</span></div><div class="report-meta">Batterihistorik · oprettet ${esc(new Date().toLocaleDateString('da-DK'))}</div></header>
+      <h1>Battery Condition Report</h1><p class="report-car">${esc(name)} · Modelår ${esc(currentVehicle?.model_year||'—')}</p>
+      <p class="report-disclaimer">Databaseret observationsrapport. Ingen officiel Kia-diagnose, værkstedsmåling eller uafhængig kapacitetstest.</p>
+      <div class="report-grid"><div><span>Status</span><strong>${esc(a.status)}</strong></div><div><span>Seneste BMS SoH</span><strong>${a.sohLast===null?'—':`${fmt(a.sohLast,1)} %`}</strong></div><div><span>Måledage</span><strong>${a.days}</strong></div><div><span>SoC-dækning</span><strong>${a.coveredBands}/5</strong></div></div>
+      <h2>Datagrundlag</h2><p>${a.records} registreringer · ${a.days} forskellige måledage · ${esc(d(a.dateStart))} til ${esc(d(a.dateEnd))}.</p>
+      <p>BMS SoH: ${a.sohFirst===null?'—':fmt(a.sohFirst,1)+' %'} → ${a.sohLast===null?'—':fmt(a.sohLast,1)+' %'} (${a.sohChange===null?'ukendt':`${a.sohChange>0?'+':''}${fmt(a.sohChange,1)} procentpoint`}).</p>
+      <p>Celleforskel ≥100 mV ved 20–90 % SoC: ${a.cellDays} forskellige dage. Batteriets faktiske brugbare kapacitet er ikke bestemt.</p>
+      <h2>Observationer</h2><ul>${a.recommendations.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>
+      <h2>Hændelser (seneste 20)</h2><table><thead><tr><th>Tidspunkt</th><th>Hændelse</th><th>Dokumenteret observation</th></tr></thead><tbody>
+      ${a.events.slice(0,20).map(e=>`<tr><td>${esc(d(e.time))}</td><td>${esc(e.title)}</td><td>${esc(e.detail)}</td></tr>`).join('')||'<tr><td colspan="3">Ingen specifikke hændelser</td></tr>'}</tbody></table>
+      <h2>Metode & forbehold</h2><p>SoH: seneste BMS-aflæsning pr. lokal måledag. Celle-screening: observeret differens ≥100 mV inden for 20–90 % SoC. Belastning, strøm og præcis cellesammensætning kendes ikke; værdien er ikke en defektgrænse. SoC-hvilefald vises kun for eksplicit registrerede REST_CHANGE-hændelser. Fejlkoder vises kun, hvis de står i lognotater. Flere målinger samme dag tælles ikke som uafhængige dage. Data fra egne Supabase-poster, ingen flådetal hvis færre end 5 uafhængige sammenlignelige biler.</p>
+      <footer>EV Pulse Benchmark 1.0 · Rapporten indeholder ingen VIN, nummerplade eller GPS-position.</footer></div>`;
+  }
+  function printBatteryReport(){
+    if(!currentVehicle||!currentRecords.length){window.alert('Der er endnu ingen batteridata at rapportere.');return;}
+    const report=q('batteryPrintReport');
+    report.innerHTML=reportMarkup();
+    window.print();
   }
 
   function renderPreview() {
@@ -768,8 +845,8 @@
 
   function switchView(name) {
     const targets={battery:"batterySummary",history:"historyPanel",compare:"comparePanel",fingerprint:"fingerprintPanel"};
-    const actual = ["upload","vehicle"].includes(name)?name:"overview";
-    ["overview","upload","vehicle"].forEach(v=>q(v+"View").classList.toggle("hidden",v!==actual));
+    const actual = ["upload","vehicle","condition"].includes(name)?name:"overview";
+    ["overview","upload","vehicle","condition"].forEach(v=>q(v+"View").classList.toggle("hidden",v!==actual));
     document.querySelectorAll(".nav-item").forEach(btn=>btn.classList.toggle("active",btn.dataset.view===name));
     if(targets[name]) requestAnimationFrame(()=>q(targets[name])?.scrollIntoView({behavior:"smooth",block:"center"}));
     if(actual==='overview')requestAnimationFrame(renderSohChart);
@@ -785,6 +862,7 @@
     setTimeout(()=>URL.revokeObjectURL(url),1000);
   }
   function bindUi() {
+    setupNewVehicleForm();
     document.querySelectorAll(".nav-item").forEach(btn=>btn.addEventListener("click",()=>switchView(btn.dataset.view)));
     q("headerDataButton")?.addEventListener("click",()=>switchView("upload"));
     q("headerSettingsButton")?.addEventListener("click",()=>switchView("vehicle"));
@@ -792,6 +870,8 @@
     q("quickHistory")?.addEventListener("click",()=>switchView("history"));
     q("quickCompare")?.addEventListener("click",()=>switchView("compare"));
     q("quickExport")?.addEventListener("click",exportOwnCsv);
+    q("conditionReportButton")?.addEventListener("click",printBatteryReport);
+    q("goCondition")?.addEventListener("click",()=>switchView("condition"));
     q("chartPeriod")?.addEventListener("change",renderSohChart);
     q("chartXAxis")?.addEventListener("change",renderSohChart);
     // Recalculate SVG at its real display size; never distort the viewBox.
@@ -811,16 +891,9 @@
       try{await createVehicleFromForm(e.currentTarget);setMessage(q("vehicleFormMessage"),"Bilprofil gemt.","success")}
       catch(err){setMessage(q("vehicleFormMessage"),err.message||String(err),"error")}
     });
-    q("vehicleForm").addEventListener("change",e=>{
-      const form=q("vehicleForm");
-      if(e.target.name === "model_year") defaultGenerationForChangedYear(form);
-      if(form.elements.namedItem("trim_level")?.value==="GT Performance")form.elements.namedItem("variant").value="AWD";
-      syncVehicleFactoryProfile(form);
-    });
-    q("vehicleForm").addEventListener("input",e=>{
-      if(e.target.name !== "model_year")return;
-      defaultGenerationForChangedYear(e.currentTarget);
-      syncVehicleFactoryProfile(e.currentTarget);
+q("vehicleForm").addEventListener("change",e=>{
+      if(['model_year','generation','battery_pack','variant','trim_level'].includes(e.target.name))
+        catalogChanged(e.currentTarget,e.target.name);
     });
     q("vehicleEditForm").addEventListener("submit",async e=>{
       e.preventDefault();setMessage(q("vehicleEditMessage"),"Gemmer…");
@@ -828,29 +901,17 @@
       catch(err){setMessage(q("vehicleEditMessage"),err.message||String(err),"error")}
     });
     q("vehicleEditForm").addEventListener("click",e=>{
-      const btn=e.target.closest(".paint-swatch");if(!btn)return;
-      const form=q("vehicleEditForm");form.elements.namedItem("exterior_color_code").value=btn.dataset.paint;
+      const btn=e.target.closest('.paint-swatch');if(!btn)return;
+      const form=q('vehicleEditForm');form.elements.namedItem('exterior_color_code').value=btn.dataset.paint;
       renderPaintSwatches(form);refreshVehiclePreview();
     });
     q("vehicleEditForm").addEventListener("change",e=>{
-      const form=q("vehicleEditForm");
-      if(e.target.name === "model_year") defaultGenerationForChangedYear(form);
-      if(e.target.name==="trim_level" && e.target.value==="GT Performance") {
-        form.elements.namedItem("variant").value="AWD";
-        form.elements.namedItem("battery_pack").value="long";
-      }
-      syncVehicleFactoryProfile(form);
-      refreshVehiclePreview();
-    });
-    q("vehicleEditForm").addEventListener("input",e=>{
-      if(e.target.name !== "model_year")return;
-      const form=e.currentTarget;
-      defaultGenerationForChangedYear(form);
-      syncVehicleFactoryProfile(form);
-      refreshVehiclePreview();
+      if(['model_year','generation','battery_pack','variant','trim_level'].includes(e.target.name))
+        catalogChanged(e.currentTarget,e.target.name);
     });
 
-    const fileInput=q("csvFile");
+
+      const fileInput=q("csvFile");
     const handleFile=async file=>{
       q("fileLabel").textContent=file?file.name:"Ingen fil valgt";q("uploadButton").disabled=!file;q("previewButton").disabled=!file;q("previewBox").classList.add("hidden");parsedRows=[];
       if(file){try{parsedRows=parseCsv(await file.text());const required=["timestamp","type","odometer_km","soc_percent","soh_percent","remaining_kwh"];const headers=parsedRows[0]?Object.keys(parsedRows[0]):[];const missing=required.filter(h=>!headers.includes(h));if(missing.length){setMessage(q("uploadMessage"),`CSV genkendes ikke. Mangler: ${missing.join(", ")}`,"error");q("uploadButton").disabled=true;q("previewButton").disabled=true}else setMessage(q("uploadMessage"),`${parsedRows.length} Battery Evidence-records fundet.`,"success")}catch(err){setMessage(q("uploadMessage"),`Kunne ikke læse CSV: ${err.message||err}`,"error")}}
